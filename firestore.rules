@@ -1,73 +1,215 @@
 rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: youth_profiles
+// Document ID: {profileId} (UUID or auto-generated ID)
+// Fields:
+//   - Barangay / barangay: string (required, 1-100 chars) - Assigned Barangay
+//   - Full Name / fullName / name: string (required, 1-150 chars) - Youth full name
+//   - Sex: string (optional, max 30 chars) - Biological sex / gender
+//   - Date of Birth: string/timestamp (optional) - Birthdate
+//   - Civil Status: string (optional, max 50 chars) - Civil status
+//   - Contact Number: string (optional, max 50 chars) - Phone / contact
+//   - Sitio/Purok: string (optional, max 100 chars) - Sub-barangay territory
+//   - Tribe: string (optional, max 100 chars) - Ethnic affiliation
+//   - Educational Status: string (optional, max 100 chars) - e.g. In-School / OSY
+//   - Highest Educational Attainment: string (optional, max 100 chars)
+//   - Employment Status: string (optional, max 100 chars) - e.g. Employed / Student
+//   - Youth Sector: string (optional, max 100 chars) - Specific demographic sector
+//
+// Collection: online_submissions
+// Document ID: {submissionId} (auto-generated ID)
+// Fields:
+//   - Barangay / barangay: string (required, 1-100 chars) - Target Barangay
+//   - Full Name / fullName: string (required, 1-150 chars) - Applicant full name
+//   - Contact Number / contactNumber: string (optional, max 50 chars)
+//   - Sitio/Purok / sitio: string (optional, max 100 chars)
+//
+// Collection: users
+// Document ID: {userId} (matches Firebase Auth UID)
+// Fields:
+//   - username: string (optional, max 100 chars) - Account username
+//   - email: string (optional, max 150 chars) - Account email
+//   - role: string (optional, max 50 chars) - 'Admin' or 'Barangay User'
+//   - barangay / Barangay: string (optional, max 100 chars) - Jurisdiction
+//
+// Collection: audit_logs
+// Document ID: {logId} (auto-generated ID)
+// Fields:
+//   - action / Action: string (optional, max 50 chars) - Event action (e.g., LOGIN, EDIT)
+//   - details / Details: string (optional, max 2000 chars) - Change details / diff
+//   - barangay / Barangay: string (optional, max 100 chars) - Operator/record barangay
+//   - user / User: string (optional, max 100 chars) - Operator username / UID
+//   - timestamp / Timestamp: timestamp/string (optional) - Event occurrence time
+//
+// ===============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Helper Functions ---
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    // Check if the request is from an authenticated user
     function isAuthenticated() {
       return request.auth != null;
     }
 
+    // Check if the authenticated user has the Admin role in custom claims
     function isAdmin() {
-      return isAuthenticated() && request.auth.token.role == 'Admin';
+      return isAuthenticated() &&
+             'role' in request.auth.token &&
+             request.auth.token.role == 'Admin';
     }
 
+    // Check if the authenticated user has the Barangay User role in custom claims
     function isBarangayUser() {
-      return isAuthenticated() && request.auth.token.role == 'Barangay User';
+      return isAuthenticated() &&
+             'role' in request.auth.token &&
+             request.auth.token.role == 'Barangay User';
     }
 
+    // Retrieve the assigned barangay from custom claims
     function getUserBarangay() {
       return request.auth.token.barangay;
     }
 
+    // Verify whether document data belongs to the user's assigned barangay
+    // (Supports both 'Barangay' and 'barangay' field casing)
     function matchesUserBarangay(data) {
-      return (('Barangay' in data && data.Barangay == getUserBarangay()) ||
+      return getUserBarangay() != null &&
+             (('Barangay' in data && data.Barangay == getUserBarangay()) ||
               ('barangay' in data && data.barangay == getUserBarangay()));
     }
 
-    // --- 1. Master Youth Profiles ---
+    // ===============================================================
+    // Domain Validators (Validator Function Pattern)
+    // ===============================================================
+
+    // Validate barangay field existence, type, and bounded length
+    function hasValidBarangay(data) {
+      return ('Barangay' in data && data['Barangay'] is string && data['Barangay'].size() > 0 && data['Barangay'].size() <= 100) ||
+             ('barangay' in data && data['barangay'] is string && data['barangay'].size() > 0 && data['barangay'].size() <= 100);
+    }
+
+    // Validate youth / registrant full name field
+    function hasValidName(data) {
+      return ('Full Name' in data && data['Full Name'] is string && data['Full Name'].size() > 0 && data['Full Name'].size() <= 150) ||
+             ('fullName' in data && data['fullName'] is string && data['fullName'].size() > 0 && data['fullName'].size() <= 150) ||
+             ('name' in data && data['name'] is string && data['name'].size() > 0 && data['name'].size() <= 150);
+    }
+
+    // Domain validator for youth profile documents
+    function isValidYouthProfile(data) {
+      return hasValidBarangay(data) &&
+             hasValidName(data) &&
+             (!('Sex' in data) || (data['Sex'] is string && data['Sex'].size() <= 30)) &&
+             (!('Civil Status' in data) || (data['Civil Status'] is string && data['Civil Status'].size() <= 50)) &&
+             (!('Contact Number' in data) || (data['Contact Number'] is string && data['Contact Number'].size() <= 50)) &&
+             (!('Sitio/Purok' in data) || (data['Sitio/Purok'] is string && data['Sitio/Purok'].size() <= 100)) &&
+             (!('Tribe' in data) || (data['Tribe'] is string && data['Tribe'].size() <= 100)) &&
+             (!('Educational Status' in data) || (data['Educational Status'] is string && data['Educational Status'].size() <= 100)) &&
+             (!('Employment Status' in data) || (data['Employment Status'] is string && data['Employment Status'].size() <= 100)) &&
+             (!('Youth Sector' in data) || (data['Youth Sector'] is string && data['Youth Sector'].size() <= 100));
+    }
+
+    // Domain validator for public online intake submissions
+    function isValidOnlineSubmission(data) {
+      return hasValidBarangay(data) &&
+             hasValidName(data) &&
+             (!('Contact Number' in data) || (data['Contact Number'] is string && data['Contact Number'].size() <= 50)) &&
+             (!('contactNumber' in data) || (data['contactNumber'] is string && data['contactNumber'].size() <= 50)) &&
+             (!('Sitio/Purok' in data) || (data['Sitio/Purok'] is string && data['Sitio/Purok'].size() <= 100)) &&
+             (!('sitio' in data) || (data['sitio'] is string && data['sitio'].size() <= 100));
+    }
+
+    // Domain validator for user documents
+    function isValidUser(data) {
+      return (!('role' in data) || (data.role is string && data.role.size() <= 50)) &&
+             (!('barangay' in data) || (data.barangay is string && data.barangay.size() <= 100)) &&
+             (!('Barangay' in data) || (data.Barangay is string && data.Barangay.size() <= 100)) &&
+             (!('username' in data) || (data.username is string && data.username.size() <= 100)) &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 150));
+    }
+
+    // Domain validator for audit log entries
+    function isValidAuditLog(data) {
+      return (!('action' in data) || (data.action is string && data.action.size() <= 50)) &&
+             (!('Action' in data) || (data.Action is string && data.Action.size() <= 50)) &&
+             (!('details' in data) || (data.details is string && data.details.size() <= 2000)) &&
+             (!('Details' in data) || (data.Details is string && data.Details.size() <= 2000)) &&
+             (!('barangay' in data) || (data.barangay is string && data.barangay.size() <= 100)) &&
+             (!('Barangay' in data) || (data.Barangay is string && data.Barangay.size() <= 100)) &&
+             (!('user' in data) || (data.user is string && data.user.size() <= 100)) &&
+             (!('User' in data) || (data.User is string && data.User.size() <= 100));
+    }
+
+    // ===============================================================
+    // 1. Master Collection: youth_profiles
+    // ===============================================================
     match /youth_profiles/{profileId} {
-      // Admins have full access
-      allow read, write: if isAdmin();
+      // Read: Admins can read all; Barangay users can read records in their assigned barangay
+      allow read: if isAdmin() || (isBarangayUser() && matchesUserBarangay(resource.data));
 
-      // Barangay Users: read/create/update/delete scoped strictly to their assigned Barangay
-      allow read: if isBarangayUser() && matchesUserBarangay(resource.data);
-      allow create: if isBarangayUser() && matchesUserBarangay(request.resource.data);
-      allow update: if isBarangayUser() &&
-                       matchesUserBarangay(resource.data) &&
-                       matchesUserBarangay(request.resource.data);
-      allow delete: if isBarangayUser() && matchesUserBarangay(resource.data);
+      // Create: Admins can create all; Barangay users can create only if record's barangay matches their own
+      allow create: if (isAdmin() || (isBarangayUser() && matchesUserBarangay(request.resource.data))) &&
+                       isValidYouthProfile(request.resource.data);
+
+      // Update: Admins can update all; Barangay users can update only if existing and updated records match their barangay
+      allow update: if (isAdmin() || (isBarangayUser() &&
+                                      matchesUserBarangay(resource.data) &&
+                                      matchesUserBarangay(request.resource.data))) &&
+                       isValidYouthProfile(request.resource.data);
+
+      // Delete: Admins can delete all; Barangay users can delete records in their assigned barangay
+      allow delete: if isAdmin() || (isBarangayUser() && matchesUserBarangay(resource.data));
     }
 
-    // --- 2. Public Intake / Online Staging (eProfiling) ---
+    // ===============================================================
+    // 2. Public Intake Collection: online_submissions (eProfiling)
+    // ===============================================================
     match /online_submissions/{submissionId} {
-      // Public / Unauthenticated youth can submit (create only)
-      allow create: if request.resource.data.keys().hasAll(['Barangay', 'Full Name']) &&
-                       request.resource.data['Full Name'] is string &&
-                       request.resource.data['Full Name'].size() > 0 &&
-                       request.resource.data['Barangay'] is string &&
-                       request.resource.data['Barangay'].size() > 0;
+      // Public / unauthenticated self-registration: anyone can submit with valid required fields
+      allow create: if isValidOnlineSubmission(request.resource.data);
 
-      // Only authenticated users can read/manage online submissions
-      allow read, delete: if isAdmin() || (isBarangayUser() && matchesUserBarangay(resource.data));
-      allow update: if isAdmin() || (isBarangayUser() &&
-                                     matchesUserBarangay(resource.data) &&
-                                     matchesUserBarangay(request.resource.data));
+      // Only authenticated users can read, update, or delete online submissions
+      allow read, delete: if isAuthenticated();
+      allow update: if isAuthenticated() && isValidOnlineSubmission(request.resource.data);
     }
 
-    // --- 3. User Accounts & Roles ---
+    // ===============================================================
+    // 3. User Profiles Collection: users
+    // ===============================================================
     match /users/{userId} {
-      allow read, write: if isAdmin();
+      // Admins have full access to manage all user accounts with data validation
+      allow read, delete: if isAdmin();
+      allow create, update: if isAdmin() && isValidUser(request.resource.data);
+
+      // Authenticated users can read their own user record
       allow read: if isAuthenticated() && request.auth.uid == userId;
     }
 
-    // --- 4. System Audit Trail ---
+    // ===============================================================
+    // 4. System Audit Trail: audit_logs
+    // ===============================================================
     match /audit_logs/{logId} {
-      allow create: if isAuthenticated();
+      // Authenticated users can record system audit logs
+      allow create: if isAuthenticated() && isValidAuditLog(request.resource.data);
+
+      // Admins can read all audit logs; Barangay users can read logs matching their barangay
       allow read: if isAdmin() || (isBarangayUser() && matchesUserBarangay(resource.data));
-      allow update, delete: if false; // Immutable audit trail
+
+      // Audit logs are tamper-evident and immutable
+      allow update, delete: if false;
     }
 
-    // Default Deny
+    // ===============================================================
+    // Default Deny Rule
+    // ===============================================================
     match /{document=**} {
       allow read, write: if false;
     }
