@@ -13,6 +13,16 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
+    <!-- Firebase SDK v10 (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <!-- PapaParse for high-speed CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Firebase Config & CSV Engine -->
+    <script src="firebase-config.js"></script>
+    <script src="csv-parser.js"></script>
+
     <!-- Linked standard CSS -->
     <link rel="stylesheet" href="style.css">
 
@@ -83,9 +93,9 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="https://script.google.com/macros/s/AKfycbyPao3DFICJLTm4J_GS9euBd_7zGYGEnDQkoMIutdEv0mtYHwMAW7daNKkOXoARBIs2/exec" target="_blank">
-                        <i class="bi bi-cloud-upload me-2"></i>CSV Uploader
-                    </a>
+                    <button class="nav-link" data-bs-toggle="modal" data-bs-target="#csvModal">
+                        <i class="bi bi-cloud-arrow-up-fill me-2 text-primary"></i>CSV Uploader
+                    </button>
                 </li>
             </ul>
         </div>
@@ -380,6 +390,55 @@
                     <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary-modern" onclick="saveEditedRecord()">
                         <i class="bi bi-save"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="csvModal" tabindex="-1" aria-labelledby="csvModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 1rem;">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold" id="csvModalLabel">
+                        <i class="bi bi-cloud-arrow-up-fill me-2 text-primary"></i>Upload Survey CSV
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="dropZone" class="csv-dropzone mb-3" onclick="document.getElementById('csvFileInput').click()">
+                        <i class="bi bi-file-earmark-spreadsheet"></i>
+                        <h6 class="fw-bold mb-1">Drag and drop your survey .csv file here</h6>
+                        <p class="text-secondary small mb-2">Or click to browse from your computer (exported from mobile app)</p>
+                        <span class="badge bg-primary bg-opacity-10 text-primary">Supports Malungon Standard 42/43-Column Layouts</span>
+                        <input type="file" id="csvFileInput" accept=".csv" style="display: none;" onchange="handleCsvFileSelected(this.files[0])">
+                    </div>
+
+                    <div id="csvFileInfo" style="display: none;" class="file-preview-card mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="bi bi-file-earmark-check fs-2 text-success"></i>
+                            <div>
+                                <div class="fw-bold text-dark" id="fileName">file.csv</div>
+                                <div class="small text-secondary" id="fileStats">Loading...</div>
+                            </div>
+                        </div>
+                        <span class="badge bg-success" id="detectedBrgyBadge">Barangay: Detecting...</span>
+                    </div>
+
+                    <div id="uploadProgressSection" style="display: none;" class="mb-3">
+                        <div class="d-flex justify-content-between small text-secondary mb-1">
+                            <span>Importing records to Cloud Firestore...</span>
+                            <span id="uploadProgressPercent" class="fw-bold text-primary">0%</span>
+                        </div>
+                        <div class="progress" style="height: 10px; border-radius: 5px;">
+                            <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light rounded-bottom">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal" id="btnCancelCsv">Cancel</button>
+                    <button type="button" class="btn btn-primary-modern" id="btnStartImport" onclick="startCsvImport()" disabled>
+                        <i class="bi bi-upload me-1"></i> Start Firestore Import
                     </button>
                 </div>
             </div>

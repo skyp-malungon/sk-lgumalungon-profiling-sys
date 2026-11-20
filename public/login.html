@@ -12,6 +12,12 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <!-- Firebase SDK v10 (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; padding: 20px; }
         .login-wrapper { max-width: 1000px; width: 100%; background: #ffffff; border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08); overflow: hidden; display: flex; flex-direction: column; }
@@ -169,9 +175,6 @@
     </div>
 
     <script>
-        // REPLACE THIS WITH YOUR NEW DEPLOYMENT URL IF NEEDED
-        const API_URL = "https://script.google.com/macros/s/AKfycbw28DvpQIRp1tzo1-HzCkelBOY9ypfjTPWti-4fyWP44NScbEO6y2LJx80Xar034VJI/exec";
-
         function toggleVisibility(inputId, btn) {
             const input = document.getElementById(inputId);
             const icon = btn.querySelector('i');
@@ -196,7 +199,6 @@
             }
         }
 
-        // NEW: Shows Master Key input only if System Admin is chosen
         function toggleMasterKey() {
             const brgy = document.getElementById('regBarangay').value;
             const mkSection = document.getElementById('masterKeySection');
@@ -206,8 +208,15 @@
             } else {
                 mkSection.style.display = 'none';
                 document.getElementById('regMasterKey').required = false;
-                document.getElementById('regMasterKey').value = ''; // clear it
+                document.getElementById('regMasterKey').value = '';
             }
+        }
+
+        async function hashPassword(plainText) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(plainText + '_sk_malungon_salt_2026');
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
         async function handleLogin(e) {
@@ -217,24 +226,52 @@
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Authenticating...';
             btn.disabled = true;
 
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'login', username: loginUser.value, password: loginPass.value })
-                });
-                const result = await response.json();
+            const inputUser = document.getElementById('loginUser').value.trim();
+            const inputPass = document.getElementById('loginPass').value.trim();
 
-                if (result.success) {
-                    sessionStorage.setItem('sk_auth_token', result.token);
-                    sessionStorage.setItem('sk_user_role', result.role);
-                    sessionStorage.setItem('sk_user_barangay', result.barangay);
-                    window.location.href = 'index.html'; 
+            try {
+                // 1. Master Admin Hardcoded Fallback / Bootstrap
+                if (inputUser === 'admin' && inputPass === 'malungonsk2024') {
+                    sessionStorage.setItem('sk_auth_token', 'ADMIN_SESSION_TOKEN');
+                    sessionStorage.setItem('sk_user_role', 'Admin');
+                    sessionStorage.setItem('sk_user_barangay', 'All');
+                    sessionStorage.setItem('sk_username', 'admin');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // 2. Query Firestore Users Collection
+                const inputHash = await hashPassword(inputPass);
+                const querySnap = await db.collection('users').where('username', '==', inputUser).get();
+
+                if (querySnap.empty) {
+                    Swal.fire('Error', 'Invalid username or password.', 'error');
+                    return;
+                }
+
+                let authenticated = false;
+                let activeUser = null;
+
+                querySnap.forEach(doc => {
+                    const u = doc.data();
+                    if (u.passwordHash === inputHash || u.password === inputPass) {
+                        authenticated = true;
+                        activeUser = { id: doc.id, ...u };
+                    }
+                });
+
+                if (authenticated && activeUser) {
+                    sessionStorage.setItem('sk_auth_token', activeUser.id);
+                    sessionStorage.setItem('sk_user_role', activeUser.role || 'Barangay User');
+                    sessionStorage.setItem('sk_user_barangay', activeUser.barangay || activeUser.Barangay || '');
+                    sessionStorage.setItem('sk_username', activeUser.username);
+                    window.location.href = 'index.html';
                 } else {
-                    Swal.fire('Error', result.message || 'Invalid credentials', 'error');
+                    Swal.fire('Error', 'Invalid username or password.', 'error');
                 }
             } catch (err) {
-                Swal.fire('Error', 'Failed to connect to the server.', 'error');
+                console.error('[Login Error]', err);
+                Swal.fire('Error', 'Failed to authenticate with Cloud Firestore: ' + err.message, 'error');
             } finally {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
@@ -248,30 +285,48 @@
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
             btn.disabled = true;
 
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ 
-                        action: 'register', 
-                        username: regUser.value, 
-                        password: regPass.value,
-                        barangay: regBarangay.value,
-                        masterKey: document.getElementById('regMasterKey').value // NEW: Send master key
-                    })
-                });
-                const result = await response.json();
+            const username = document.getElementById('regUser').value.trim();
+            const password = document.getElementById('regPass').value.trim();
+            const barangay = document.getElementById('regBarangay').value;
+            const masterKey = document.getElementById('regMasterKey').value;
 
-                if (result.success) {
-                    Swal.fire('Success', result.message, 'success').then(() => {
-                        toggleForms(); // Switch back to login
-                        document.getElementById('loginUser').value = regUser.value;
-                    });
-                } else {
-                    Swal.fire('Error', result.message, 'error');
+            try {
+                let role = 'Barangay User';
+                let assignedBarangay = barangay;
+
+                if (barangay === 'System Admin') {
+                    if (masterKey !== 'malungonsk2024') {
+                        Swal.fire('Access Denied', 'Incorrect Default Admin Password! Registration denied.', 'error');
+                        return;
+                    }
+                    role = 'Admin';
+                    assignedBarangay = 'All';
                 }
+
+                // Check if username already exists
+                const existingSnap = await db.collection('users').where('username', '==', username).get();
+                if (!existingSnap.empty) {
+                    Swal.fire('Error', 'Username already exists! Please choose another.', 'error');
+                    return;
+                }
+
+                const passwordHash = await hashPassword(password);
+
+                await db.collection('users').add({
+                    username: username,
+                    passwordHash: passwordHash,
+                    role: role,
+                    barangay: assignedBarangay,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                Swal.fire('Success', 'Account created successfully! You can now log in.', 'success').then(() => {
+                    toggleForms();
+                    document.getElementById('loginUser').value = username;
+                });
             } catch (err) {
-                Swal.fire('Error', 'Failed to connect to the server.', 'error');
+                console.error('[Registration Error]', err);
+                Swal.fire('Error', 'Failed to create account in Cloud Firestore: ' + err.message, 'error');
             } finally {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;

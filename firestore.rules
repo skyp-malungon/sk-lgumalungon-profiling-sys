@@ -59,23 +59,34 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Check if the authenticated user has the Admin role in custom claims
+    // Retrieve user document data if it exists
+    function getUserData() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) ?
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data : {};
+    }
+
+    // Check if the authenticated user has Admin privileges (token claim, admin email, or Firestore document role)
     function isAdmin() {
-      return isAuthenticated() &&
-             'role' in request.auth.token &&
-             request.auth.token.role == 'Admin';
+      return isAuthenticated() && (
+        ('role' in request.auth.token && request.auth.token.role == 'Admin') ||
+        (request.auth.token.email != null && request.auth.token.email.matches('.*admin.*')) ||
+        (getUserData().role == 'Admin')
+      );
     }
 
-    // Check if the authenticated user has the Barangay User role in custom claims
+    // Check if the authenticated user has the Barangay User role (token claim or Firestore document role)
     function isBarangayUser() {
-      return isAuthenticated() &&
-             'role' in request.auth.token &&
-             request.auth.token.role == 'Barangay User';
+      return isAuthenticated() && (
+        ('role' in request.auth.token && request.auth.token.role == 'Barangay User') ||
+        (getUserData().role == 'Barangay User')
+      );
     }
 
-    // Retrieve the assigned barangay from custom claims
+    // Retrieve the assigned barangay from custom claims or user profile document
     function getUserBarangay() {
-      return request.auth.token.barangay;
+      return 'barangay' in request.auth.token ? request.auth.token.barangay :
+             ('barangay' in getUserData() ? getUserData().barangay :
+             ('Barangay' in getUserData() ? getUserData().Barangay : null));
     }
 
     // Verify whether document data belongs to the user's assigned barangay
@@ -187,10 +198,12 @@ service cloud.firestore {
     match /users/{userId} {
       // Admins have full access to manage all user accounts with data validation
       allow read, delete: if isAdmin();
-      allow create, update: if isAdmin() && isValidUser(request.resource.data);
+      allow update: if isAdmin() && isValidUser(request.resource.data);
 
-      // Authenticated users can read their own user record
+      // Authenticated users can read their own user record and create it upon registration
       allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if (isAdmin() || (isAuthenticated() && request.auth.uid == userId)) &&
+                       isValidUser(request.resource.data);
     }
 
     // ===============================================================
