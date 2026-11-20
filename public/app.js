@@ -597,8 +597,9 @@ function openEditModal(uid) {
     let html = '<form id="editForm"><div class="row g-3">';
     fields.forEach(field => {
         let input = '';
+        const cleanId = 'edit_' + field.key.replace(/[^a-zA-Z0-9]/g, '_');
         if (field.type === 'select') {
-            input = `<select class="form-select form-control-modern" id="edit_${field.key}">`;
+            input = `<select class="form-select form-control-modern" data-field-key="${escapeHtml(field.key)}" id="${cleanId}">`;
             field.options.forEach(opt => {
                 input += `<option value="${opt}" ${data[field.key] === opt ? 'selected' : ''}>${opt}</option>`;
             });
@@ -606,7 +607,7 @@ function openEditModal(uid) {
         } else {
             let val = safeGet(data, field.key) || '';
             const disabledState = field.locked ? 'disabled' : '';
-            input = `<input type="${field.type}" class="form-control form-control-modern" id="edit_${field.key}" value="${escapeHtml(val)}" ${disabledState}>`;
+            input = `<input type="${field.type}" class="form-control form-control-modern" data-field-key="${escapeHtml(field.key)}" id="${cleanId}" value="${escapeHtml(val)}" ${disabledState}>`;
         }
         html += `<div class="col-md-${field.col}"><label class="form-label-modern">${field.label}</label>${input}</div>`;
     });
@@ -619,7 +620,8 @@ async function saveEditedRecord() {
     if (!currentEditData) return;
     const updatedData = {};
     document.querySelectorAll('#editForm input, #editForm select').forEach(input => {
-        updatedData[input.id.replace('edit_', '')] = input.value;
+        const fieldKey = input.getAttribute('data-field-key') || input.id.replace('edit_', '');
+        updatedData[fieldKey] = input.value;
     });
 
     if (USER_ROLE !== 'Admin') {
@@ -636,7 +638,7 @@ async function saveEditedRecord() {
     Swal.fire({ title: 'Saving to Cloud Firestore...', didOpen: () => Swal.showLoading() });
 
     try {
-        await db.collection('youth_profiles').doc(currentEditData.uid).update(updatedData);
+        await db.collection('youth_profiles').doc(currentEditData.uid).set(updatedData, { merge: true });
 
         // Audit Trail
         await db.collection('audit_logs').add({
