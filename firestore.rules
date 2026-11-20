@@ -49,6 +49,15 @@ rules_version = '2';
 //   - user / User: string (optional, max 100 chars) - Operator username / UID
 //   - timestamp / Timestamp: timestamp/string (optional) - Event occurrence time
 //
+// Collection: counters
+// Document ID: {counterId} (e.g., barangay-year sequence identifier)
+// Fields:
+//   - lastSerial: int/number (required, >= 0) - Latest sequential serial counter
+//   - barangay / Barangay: string (optional, max 100 chars) - Associated barangay
+//   - year: string/int/number (optional) - Year identifier
+//   - prefix: string (optional, max 50 chars) - Sequence prefix (e.g., SK-Mal)
+//   - updatedAt / timestamp: timestamp/string (optional) - Last update time
+//
 // ===============================================================
 
 service cloud.firestore {
@@ -139,6 +148,19 @@ service cloud.firestore {
              (!('timestamp' in data) || (data.timestamp is timestamp || data.timestamp is string));
     }
 
+    // Domain validator for atomic sequence counters (Form Numbers)
+    function isValidCounter(data) {
+      return ('lastSerial' in data) &&
+             (data.lastSerial is int || data.lastSerial is number) &&
+             data.lastSerial >= 0 &&
+             (!('barangay' in data) || (data.barangay is string && data.barangay.size() <= 100)) &&
+             (!('Barangay' in data) || (data.Barangay is string && data.Barangay.size() <= 100)) &&
+             (!('year' in data) || (data.year is string && data.year.size() <= 10) || (data.year is int || data.year is number)) &&
+             (!('prefix' in data) || (data.prefix is string && data.prefix.size() <= 50)) &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp || data.updatedAt is string)) &&
+             (!('timestamp' in data) || (data.timestamp is timestamp || data.timestamp is string));
+    }
+
     // ===============================================================
     // 1. Master Collection: youth_profiles
     // ===============================================================
@@ -196,6 +218,17 @@ service cloud.firestore {
 
       // Delete: Allow authenticated users or all users during initial rollout
       allow delete: if isAuthenticated() || true;
+    }
+
+    // ===============================================================
+    // 5. Atomic Sequence Counters: counters
+    // ===============================================================
+    match /counters/{counterId} {
+      // Allow unauthenticated and authenticated clients to read and update
+      // so atomic transactions from public web forms (prof.js) can increment lastSerial
+      allow read: if true;
+      allow create, update: if isValidCounter(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     // ===============================================================
