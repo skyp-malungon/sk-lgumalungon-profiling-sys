@@ -230,8 +230,8 @@
             const inputPass = document.getElementById('loginPass').value.trim();
 
             try {
-                // 1. Master Admin Hardcoded Fallback / Bootstrap
-                if (inputUser === 'admin' && inputPass === 'malungonsk2024') {
+                // 1. Master Admin Hardcoded Fallback / Bootstrap (Case-Insensitive Username)
+                if (inputUser.toLowerCase() === 'admin' && inputPass === 'malungonsk2024') {
                     sessionStorage.setItem('sk_auth_token', 'ADMIN_SESSION_TOKEN');
                     sessionStorage.setItem('sk_user_role', 'Admin');
                     sessionStorage.setItem('sk_user_barangay', 'All');
@@ -242,7 +242,10 @@
 
                 // 2. Query Firestore Users Collection
                 const inputHash = await hashPassword(inputPass);
-                const querySnap = await db.collection('users').where('username', '==', inputUser).get();
+                let querySnap = await db.collection('users').where('username', '==', inputUser).get();
+                if (querySnap.empty && inputUser !== inputUser.toLowerCase()) {
+                    querySnap = await db.collection('users').where('username', '==', inputUser.toLowerCase()).get();
+                }
 
                 if (querySnap.empty) {
                     Swal.fire('Error', 'Invalid username or password.', 'error');
