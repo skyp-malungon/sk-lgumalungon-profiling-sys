@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'Admin';
+    }
+
+    function isBarangayUser() {
+      return isAuthenticated() && request.auth.token.role == 'Barangay User';
+    }
+
+    function getUserBarangay() {
+      return request.auth.token.barangay;
+    }
+
+    function matchesUserBarangay(data) {
+      return (('Barangay' in data && data.Barangay == getUserBarangay()) ||
+              ('barangay' in data && data.barangay == getUserBarangay()));
+    }
+
+    // --- 1. Master Youth Profiles ---
+    match /youth_profiles/{profileId} {
+      // Admins have full access
+      allow read, write: if isAdmin();
+
+      // Barangay Users: read/create/update/delete scoped strictly to their assigned Barangay
+      allow read: if isBarangayUser() && matchesUserBarangay(resource.data);
+      allow create: if isBarangayUser() && matchesUserBarangay(request.resource.data);
+      allow update: if isBarangayUser() &&
+                       matchesUserBarangay(resource.data) &&
+                       matchesUserBarangay(request.resource.data);
+      allow delete: if isBarangayUser() && matchesUserBarangay(resource.data);
+    }
+
+    // --- 2. Public Intake / Online Staging (eProfiling) ---
+    match /online_submissions/{submissionId} {
+      // Public / Unauthenticated youth can submit (create only)
+      allow create: if request.resource.data.keys().hasAll(['Barangay', 'Full Name']) &&
+                       request.resource.data['Full Name'] is string &&
+                       request.resource.data['Full Name'].size() > 0 &&
+                       request.resource.data['Barangay'] is string &&
+                       request.resource.data['Barangay'].size() > 0;
+
+      // Only authenticated users can read/manage online submissions
+      allow read, delete: if isAdmin() || (isBarangayUser() && matchesUserBarangay(resource.data));
+      allow update: if isAdmin() || (isBarangayUser() &&
+                                     matchesUserBarangay(resource.data) &&
+                                     matchesUserBarangay(request.resource.data));
+    }
+
+    // --- 3. User Accounts & Roles ---
+    match /users/{userId} {
+      allow read, write: if isAdmin();
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // --- 4. System Audit Trail ---
+    match /audit_logs/{logId} {
+      allow create: if isAuthenticated();
+      allow read: if isAdmin() || (isBarangayUser() && matchesUserBarangay(resource.data));
+      allow update, delete: if false; // Immutable audit trail
+    }
+
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
