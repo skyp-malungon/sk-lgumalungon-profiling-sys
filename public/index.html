@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SK Youth Management System</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="icon" href="/favicon.ico" />
@@ -17,239 +19,271 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <!-- PapaParse for high-speed CSV parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <!-- Firebase Config & CSV Engine -->
     <script src="firebase-config.js"></script>
     <script src="csv-parser.js"></script>
 
     <!-- Linked standard CSS -->
     <link rel="stylesheet" href="style.css">
-
-    <style>
-        /* Small style addition to ensure logos look great in the header */
-        .header-logos img {
-            width: 48px;
-            height: 48px;
-            object-fit: contain;
-            border-radius: 50%;
-            background: #fff;
-            padding: 3px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-    </style>
 </head>
 <body>
+    <a href="#mainContent" class="skip-link">Skip to main content</a>
 
     <header class="app-header">
-        <div class="container-fluid px-4">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="brand-section d-flex align-items-center gap-3">
-                    <!-- Updated with Official Logos -->
+        <div class="container-fluid px-3 px-md-4">
+            <div class="d-flex justify-content-between align-items-center gap-2">
+                <div class="brand-section d-flex align-items-center gap-2 gap-sm-3">
                     <div class="header-logos d-flex gap-2">
-                        <img src="https://drive.google.com/thumbnail?id=1UqcRFlPUFnGarFC7LRfE4gMlz71ZYx6m&sz=s1000" alt="LGU Logo">
-                        <img src="https://drive.google.com/thumbnail?id=1ovjAoz-t8OHyPkAPH37lmEsLmA4aow4C&sz=s1000" alt="SK Fed Logo">
+                        <img src="https://drive.google.com/thumbnail?id=1UqcRFlPUFnGarFC7LRfE4gMlz71ZYx6m&sz=s1000" width="44" height="44" alt="Municipality of Malungon Seal">
+                        <img src="https://drive.google.com/thumbnail?id=1ovjAoz-t8OHyPkAPH37lmEsLmA4aow4C&sz=s1000" width="44" height="44" alt="SK Federation Malungon Logo">
                     </div>
                     <div>
-                        <h1 class="m-0 fs-5 fw-bold text-dark">SK Youth Profiling Data</h1>
-                        <p class="m-0 text-secondary" style="font-size: 0.85rem;">Municipality of Malungon, Sarangani Province</p>
+                        <h1>SK Youth Profiling Data</h1>
+                        <p>Municipality of Malungon, Sarangani Province</p>
                     </div>
                 </div>
-                <div class="d-flex align-items-center gap-3">
-                    <span class="badge bg-light text-dark border"><i class="bi bi-clock me-1"></i> <span id="clock">Loading...</span></span>
-                    <!-- LOGOUT BUTTON -->
-                    <button class="btn btn-sm btn-outline-danger shadow-sm fw-bold" onclick="logout()"><i class="bi bi-box-arrow-right me-1"></i> Logout</button>
+                <div class="d-flex align-items-center gap-2">
+                    <span id="userRoleBadge" class="header-meta role-pill d-none d-md-inline-flex">
+                        <i class="bi bi-shield-check" aria-hidden="true"></i>
+                        <span>Verifying role...</span>
+                    </span>
+                    <span class="header-meta tabular-nums d-none d-lg-inline-flex" aria-label="Current local time">
+                        <i class="bi bi-clock" aria-hidden="true"></i>
+                        <span id="clock">--:--:--</span>
+                    </span>
+                    <button type="button" class="btn-logout" onclick="logout()" aria-label="Log out of SK Youth Management System">
+                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                        <span class="d-none d-sm-inline">Logout</span>
+                    </button>
                 </div>
             </div>
         </div>
     </header>
 
-    <div class="container-fluid px-4 py-4">
-        <div class="d-flex justify-content-center mb-4">
+    <main id="mainContent" class="container-fluid px-3 px-md-4 py-4">
+        <nav class="nav-workspace" aria-label="Primary workspace navigation">
             <ul class="nav nav-pills" id="mainTab" role="tablist">
-                <li class="nav-item">
-                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#dashboard-view">
-                        <i class="bi bi-grid-1x2 me-2"></i>Dashboard
+                <li class="nav-item" role="presentation">
+                    <button type="button" class="nav-link active" id="tab-dashboard" data-bs-toggle="pill" data-bs-target="#dashboard-view" role="tab" aria-controls="dashboard-view" aria-selected="true">
+                        <i class="bi bi-grid-1x2" aria-hidden="true"></i>Dashboard
                     </button>
                 </li>
-                <li class="nav-item">
-                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#registry-view">
-                        <i class="bi bi-people me-2"></i>Registry
+                <li class="nav-item" role="presentation">
+                    <button type="button" class="nav-link" id="tab-registry" data-bs-toggle="pill" data-bs-target="#registry-view" role="tab" aria-controls="registry-view" aria-selected="false">
+                        <i class="bi bi-people" aria-hidden="true"></i>Registry
+                        <span id="registrySyncBadge" class="sync-nav-badge d-none" title="New web form submissions available to sync">0</span>
                     </button>
                 </li>
-                <li class="nav-item">
-                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#reports-view">
-                        <i class="bi bi-printer me-2"></i>Reports
+                <li class="nav-item" role="presentation">
+                    <button type="button" class="nav-link" id="tab-reports" data-bs-toggle="pill" data-bs-target="#reports-view" role="tab" aria-controls="reports-view" aria-selected="false">
+                        <i class="bi bi-printer" aria-hidden="true"></i>Reports
                     </button>
                 </li>
-                <li class="nav-item">
-                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#logs-view" onclick="loadLogs()">
-                        <i class="bi bi-journal-text me-2"></i>Audit Trail
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="https://script.google.com/macros/s/AKfycbwcqJwkuLxSpj4xj_BSjZA8B7KpEmpW31X_-CZj3CeDda0LeUvwgQogO4heDVGYh1oA/exec" target="_blank">
-                        <i class="bi bi-file-earmark-plus me-2"></i>Form Generator
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link" data-bs-toggle="modal" data-bs-target="#csvModal">
-                        <i class="bi bi-cloud-arrow-up-fill me-2 text-primary"></i>CSV Uploader
+                <li class="nav-item" role="presentation">
+                    <button type="button" class="nav-link" id="tab-logs" data-bs-toggle="pill" data-bs-target="#logs-view" role="tab" aria-controls="logs-view" aria-selected="false" onclick="loadLogs()">
+                        <i class="bi bi-journal-text" aria-hidden="true"></i>Audit Trail
                     </button>
                 </li>
             </ul>
-        </div>
+
+            <div class="external-tools-bar" aria-label="Auxiliary tools">
+                <a class="btn-external-tool" href="https://script.google.com/macros/s/AKfycbwcqJwkuLxSpj4xj_BSjZA8B7KpEmpW31X_-CZj3CeDda0LeUvwgQogO4heDVGYh1oA/exec" target="_blank" rel="noopener noreferrer">
+                    <i class="bi bi-file-earmark-plus text-primary" aria-hidden="true"></i>
+                    <span>Form Generator</span>
+                    <i class="bi bi-box-arrow-up-right ext-arrow" aria-hidden="true"></i>
+                </a>
+                <button type="button" class="btn-external-tool" data-bs-toggle="modal" data-bs-target="#csvModal">
+                    <i class="bi bi-cloud-arrow-up-fill text-primary" aria-hidden="true"></i>
+                    <span>CSV Uploader</span>
+                </button>
+            </div>
+        </nav>
 
         <div class="tab-content">
             <!-- DASHBOARD VIEW -->
-            <div class="tab-pane fade show active" id="dashboard-view">
-                <div class="card-modern mb-4">
-                    <div class="d-flex align-items-center mb-3 text-primary">
-                        <i class="bi bi-funnel-fill me-2"></i>
-                        <span class="fw-bold text-uppercase small ls-1">Data Filters</span>
+            <div class="tab-pane fade show active" id="dashboard-view" role="tabpanel" aria-labelledby="tab-dashboard">
+                <section class="card-modern mb-4" aria-label="Dashboard data filters">
+                    <div class="filter-header">
+                        <h2 class="filter-title">
+                            <i class="bi bi-funnel-fill text-primary" aria-hidden="true"></i>
+                            <span>Data Filters</span>
+                        </h2>
+                        <span id="filterResultBadge" class="filter-summary-pill">Loading dataset...</span>
                     </div>
                     <div class="row g-3">
-                        <div class="col-md-2">
-                            <label class="form-label-modern">Barangay</label>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <label class="form-label-modern" for="barangayFilter">Barangay</label>
                             <select class="form-select form-control-modern" id="barangayFilter">
                                 <option value="">All Barangays</option>
                             </select>
                         </div>
-                        <div class="col-md-2">
-                            <label class="form-label-modern">Sitio/Purok</label>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <label class="form-label-modern" for="sitioFilter">Sitio / Purok</label>
                             <select class="form-select form-control-modern" id="sitioFilter">
                                 <option value="">All</option>
                             </select>
                         </div>
-                        <div class="col-md-2">
-                            <label class="form-label-modern">Gender</label>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <label class="form-label-modern" for="sexFilter">Sex</label>
                             <select class="form-select form-control-modern" id="sexFilter">
                                 <option value="">All</option>
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
                             </select>
                         </div>
-                        <div class="col-md-2">
-                            <label class="form-label-modern">Tribe</label>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <label class="form-label-modern" for="tribeFilter">Tribe</label>
                             <select class="form-select form-control-modern" id="tribeFilter">
                                 <option value="">All Tribes</option>
                             </select>
                         </div>
-                         <div class="col-md-2">
-                            <label class="form-label-modern">Eligibility</label>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <label class="form-label-modern" for="eligibilityFilter">Eligibility</label>
                             <select class="form-select form-control-modern" id="eligibilityFilter">
                                 <option value="all">All</option>
                                 <option value="qualified" selected>Qualified (15-30)</option>
                                 <option value="overaged">Over-aged (31+)</option>
                             </select>
                         </div>
-                        <div class="col-md-2 d-flex align-items-end gap-2">
-                            <button class="btn btn-primary-modern w-100" onclick="applyFilters()">
-                                <i class="bi bi-check-lg"></i> Apply
+                        <div class="col-6 col-md-4 col-lg-2 d-flex align-items-end gap-2">
+                            <button type="button" class="btn btn-primary-modern flex-grow-1" id="applyFiltersBtn" onclick="applyFilters()">
+                                <i class="bi bi-check-lg" aria-hidden="true"></i> Apply
                             </button>
-                            <button class="btn btn-light border w-50" onclick="clearFilters()" title="Reset">
-                                <i class="bi bi-arrow-counterclockwise"></i>
+                            <button type="button" class="btn btn-secondary-modern" onclick="clearFilters()" title="Reset filters to default" aria-label="Reset filters to default">
+                                <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
-                </div>
+                    <div id="activeFiltersBar" class="active-filters-bar d-none" aria-live="polite"></div>
+                </section>
 
-                <div id="dashboardStats" class="row g-3 mb-4">
-                    <div class="col-md-3"><div class="skeleton skeleton-block"></div></div>
-                    <div class="col-md-3"><div class="skeleton skeleton-block"></div></div>
-                    <div class="col-md-3"><div class="skeleton skeleton-block"></div></div>
-                    <div class="col-md-3"><div class="skeleton skeleton-block"></div></div>
-                </div>
+                <section id="dashboardStats" class="row g-3 mb-4" aria-label="Key demographic metrics">
+                    <div class="col-sm-6 col-xl-3"><div class="skeleton skeleton-block"></div></div>
+                    <div class="col-sm-6 col-xl-3"><div class="skeleton skeleton-block"></div></div>
+                    <div class="col-sm-6 col-xl-3"><div class="skeleton skeleton-block"></div></div>
+                    <div class="col-sm-6 col-xl-3"><div class="skeleton skeleton-block"></div></div>
+                </section>
 
-                <div class="row g-4">
+                <section class="row g-4" aria-label="Demographic charts">
                     <div class="col-12">
                         <div class="chart-card">
                             <div class="chart-header">
-                                <span class="chart-title"><i class="bi bi-bar-chart-fill text-primary me-2"></i>Population per Barangay (Vertical)</span>
+                                <span class="chart-title"><i class="bi bi-bar-chart-fill text-primary" aria-hidden="true"></i>Population per Barangay</span>
+                                <span class="text-muted small">Youth count by barangay</span>
                             </div>
-                            <div id="barangayChart" style="height: 450px;"></div>
+                            <div id="barangayChart" style="height: 420px;"></div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-6">
                         <div class="chart-card">
                             <div class="chart-header">
-                                <span class="chart-title"><i class="bi bi-pie-chart-fill text-success me-2"></i>Employment Status</span>
+                                <span class="chart-title"><i class="bi bi-pie-chart-fill text-success" aria-hidden="true"></i>Employment Status</span>
                             </div>
-                            <div id="employmentChart" style="height: 350px;"></div>
+                            <div id="employmentChart" style="height: 330px;"></div>
                         </div>
                     </div>
                     <div class="col-lg-6">
                         <div class="chart-card">
                             <div class="chart-header">
-                                <span class="chart-title"><i class="bi bi-diagram-3-fill text-danger me-2"></i>Tribe Distribution</span>
+                                <span class="chart-title"><i class="bi bi-diagram-3-fill text-danger" aria-hidden="true"></i>Tribe Distribution</span>
                             </div>
-                            <div id="tribeChart" style="height: 350px;"></div>
+                            <div id="tribeChart" style="height: 330px;"></div>
                         </div>
                     </div>
-                    
+
                     <div class="col-lg-4">
-                         <div class="chart-card">
+                        <div class="chart-card">
                             <div class="chart-header">
-                                <span class="chart-title"><i class="bi bi-mortarboard-fill text-info me-2"></i>Education</span>
+                                <span class="chart-title"><i class="bi bi-mortarboard-fill text-info" aria-hidden="true"></i>Education</span>
                             </div>
                             <div id="educationChart" style="height: 300px;"></div>
                         </div>
                     </div>
                     <div class="col-lg-4">
                         <div class="chart-card">
-                           <div class="chart-header">
-                               <span class="chart-title"><i class="bi bi-people-fill text-warning me-2"></i>Age Distribution</span>
-                           </div>
-                           <div id="ageChart" style="height: 300px;"></div>
-                       </div>
-                   </div>
-                   <div class="col-lg-4">
+                            <div class="chart-header">
+                                <span class="chart-title"><i class="bi bi-people-fill text-warning" aria-hidden="true"></i>Age Distribution</span>
+                            </div>
+                            <div id="ageChart" style="height: 300px;"></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
                         <div class="chart-card">
-                           <div class="chart-header">
-                               <span class="chart-title"><i class="bi bi-collection-fill text-secondary me-2"></i>Youth Sector</span>
-                           </div>
-                           <div id="sectorChart" style="height: 300px;"></div>
-                       </div>
-                   </div>
-                </div>
+                            <div class="chart-header">
+                                <span class="chart-title"><i class="bi bi-collection-fill text-secondary" aria-hidden="true"></i>Youth Sector</span>
+                            </div>
+                            <div id="sectorChart" style="height: 300px;"></div>
+                        </div>
+                    </div>
+                </section>
             </div>
 
             <!-- REGISTRY VIEW -->
-            <div class="tab-pane fade" id="registry-view">
+            <div class="tab-pane fade" id="registry-view" role="tabpanel" aria-labelledby="tab-registry">
                 <div class="card-modern">
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4 gap-3">
                         <div>
-                            <h5 class="fw-bold mb-1">Youth Registry</h5>
+                            <h2 class="h5 fw-bold text-dark mb-1">Youth Registry</h2>
                             <span class="text-secondary small" id="totalRecordsLabel">Loading database...</span>
                         </div>
-                        <div class="d-flex gap-2 w-100" style="max-width: 600px;"> 
-                            <div class="position-relative flex-grow-1">
-                                <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
-                                <input type="text" id="tableSearch" class="form-control form-control-modern ps-5 w-100" placeholder="Search..." onkeyup="filterTable()">
+                        <div class="d-flex flex-wrap flex-sm-nowrap gap-2 w-100" style="max-width: 660px;">
+                            <div class="search-input-wrap">
+                                <i class="bi bi-search search-icon" aria-hidden="true"></i>
+                                <input type="text" id="tableSearch" class="form-control form-control-modern w-100" placeholder="Search name, barangay, or form ID..." aria-label="Search youth registry by name, barangay, or form ID" oninput="filterTable()">
+                                <button type="button" id="clearSearchBtn" class="btn-clear-search" onclick="clearTableSearch()" aria-label="Clear search">
+                                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                                </button>
                             </div>
-                            
-                            <button class="btn-action btn-sync" id="btnSyncWeb" onclick="triggerWebSync()" title="Pull Online Form Data">
-                                <i class="bi bi-cloud-arrow-down-fill fs-6"></i> 
+
+                            <button type="button" class="btn-action btn-sync" id="btnSyncWeb" onclick="triggerWebSync()" title="Pull Online Form Data">
+                                <i class="bi bi-cloud-arrow-down-fill" aria-hidden="true"></i>
                                 <span class="d-none d-sm-inline">Sync Web Forms</span>
+                                <span id="syncBtnBadge" class="sync-count-pill d-none">0</span>
                             </button>
-                            
-                            <button class="btn-action btn-export" onclick="exportToCSV()" title="Download Filtered Data">
-                                <i class="bi bi-filetype-csv fs-6"></i> 
-                                <span class="d-none d-sm-inline">Export</span>
+
+                            <button type="button" class="btn-action btn-export" onclick="exportToCSV()" title="Download Filtered Data as CSV">
+                                <i class="bi bi-filetype-csv" aria-hidden="true"></i>
+                                <span class="d-none d-sm-inline">Export CSV</span>
                             </button>
                         </div>
+                    </div>
+
+                    <div id="syncNoticeBanner" class="sync-notice-banner d-none" role="status" aria-live="polite">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-cloud-arrow-down-fill fs-5" aria-hidden="true"></i>
+                            <span id="syncNoticeText">New web form submissions are available to sync.</span>
+                        </div>
+                        <button type="button" class="btn-sync-banner" onclick="triggerWebSync()">
+                            <i class="bi bi-arrow-repeat" aria-hidden="true"></i> Sync Now
+                        </button>
                     </div>
 
                     <div class="table-container">
                         <table class="table table-modern">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Full Name</th>
-                                    <th>Age</th>
+                                    <th>
+                                        <button type="button" class="th-sort-btn" data-sort="FormNo." onclick="toggleSort('FormNo.')">
+                                            ID <i class="bi bi-arrow-down-up small opacity-50" aria-hidden="true"></i>
+                                        </button>
+                                    </th>
+                                    <th>
+                                        <button type="button" class="th-sort-btn" data-sort="Full Name" onclick="toggleSort('Full Name')">
+                                            Full Name <i class="bi bi-arrow-down-up small opacity-50" aria-hidden="true"></i>
+                                        </button>
+                                    </th>
+                                    <th>
+                                        <button type="button" class="th-sort-btn" data-sort="calculatedAge" onclick="toggleSort('calculatedAge')">
+                                            Age <i class="bi bi-arrow-down-up small opacity-50" aria-hidden="true"></i>
+                                        </button>
+                                    </th>
                                     <th>Sex</th>
-                                    <th>Barangay</th>
+                                    <th>
+                                        <button type="button" class="th-sort-btn" data-sort="Barangay" onclick="toggleSort('Barangay')">
+                                            Barangay <i class="bi bi-arrow-down-up small opacity-50" aria-hidden="true"></i>
+                                        </button>
+                                    </th>
                                     <th>Tribe</th>
                                     <th>Civil Status</th>
                                     <th class="text-end">Actions</th>
@@ -261,23 +295,35 @@
                         </table>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mt-4">
-                        <div class="text-secondary small">
-                            Showing <span id="startIdx" class="fw-bold text-dark">0</span> to <span id="endIdx" class="fw-bold text-dark">0</span> of <span id="totalIdx" class="fw-bold text-dark">0</span>
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3 mt-3 pt-2">
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                            <div class="text-secondary small tabular-nums">
+                                Showing <span id="startIdx" class="fw-bold text-dark">0</span>–<span id="endIdx" class="fw-bold text-dark">0</span> of <span id="totalIdx" class="fw-bold text-dark">0</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="rowsPerPageSelect" class="small text-secondary mb-0">Rows:</label>
+                                <select id="rowsPerPageSelect" class="form-select form-select-sm form-control-modern py-1 ps-2" style="min-height: 32px; width: auto;" onchange="changePageSize(this.value)">
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+                            </div>
                         </div>
-                        <nav><ul class="pagination pagination-sm mb-0 gap-1" id="paginationControls"></ul></nav>
+                        <nav aria-label="Registry pagination">
+                            <ul class="pagination pagination-modern pagination-sm mb-0 gap-1" id="paginationControls"></ul>
+                        </nav>
                     </div>
                 </div>
             </div>
 
-            <!-- REPORTS VIEW -->
-            <div class="tab-pane fade" id="reports-view">
+            <!-- REPORTS VIEW (Report formatting preserved intact) -->
+            <div class="tab-pane fade" id="reports-view" role="tabpanel" aria-labelledby="tab-reports">
                 <div class="row g-4">
                     <div class="col-lg-3">
                         <div class="card-modern sticky-top" style="top: 90px;">
-                            <h6 class="fw-bold text-uppercase text-secondary small mb-3 ls-1">Configuration</h6>
+                            <h2 class="h6 fw-bold text-uppercase text-secondary small mb-3 ls-1">Configuration</h2>
                             <div class="mb-3">
-                                <label class="form-label-modern">Select Barangay</label>
+                                <label class="form-label-modern" for="reportBarangaySelect">Select Barangay</label>
                                 <select class="form-select form-control-modern" id="reportBarangaySelect">
                                     <option value="">All Barangays</option>
                                 </select>
@@ -285,38 +331,38 @@
                             <div class="mb-3">
                                 <label class="form-label-modern">Report Format</label>
                                 <div class="d-grid gap-2">
-                                    <button class="btn btn-outline-primary active btn-sm text-start p-2" onclick="setReportType('masterlist', this)">
-                                        <i class="bi bi-table me-2"></i> Master List
+                                    <button type="button" class="btn btn-outline-primary active btn-sm text-start p-2" onclick="setReportType('masterlist', this)">
+                                        <i class="bi bi-table me-2" aria-hidden="true"></i> Master List
                                     </button>
-                                    <button class="btn btn-outline-primary btn-sm text-start p-2" onclick="setReportType('summary', this)">
-                                        <i class="bi bi-pie-chart me-2"></i> Statistics Summary
+                                    <button type="button" class="btn btn-outline-primary btn-sm text-start p-2" onclick="setReportType('summary', this)">
+                                        <i class="bi bi-pie-chart me-2" aria-hidden="true"></i> Statistics Summary
                                     </button>
                                 </div>
                             </div>
                             <hr class="border-secondary opacity-25">
                             <div class="mb-3">
-                                <label class="form-label-modern">Filters</label>
-                                <select class="form-select form-control-modern mb-2" id="reportEligibilitySelect">
+                                <label class="form-label-modern" for="reportEligibilitySelect">Filters</label>
+                                <select class="form-select form-control-modern mb-2" id="reportEligibilitySelect" aria-label="Report eligibility filter">
                                     <option value="qualified">Qualified (15-30)</option>
                                     <option value="overaged">Over-aged (31+)</option>
                                     <option value="all">All Records</option>
                                 </select>
-                                <select class="form-select form-control-modern mb-2" id="reportEmploymentSelect">
+                                <select class="form-select form-control-modern mb-2" id="reportEmploymentSelect" aria-label="Report employment filter">
                                     <option value="all">All Employment Status</option>
                                     <option value="Employed">Employed</option>
                                     <option value="Unemployed">Unemployed</option>
                                     <option value="Student">Student</option>
                                 </select>
-                                <select class="form-select form-control-modern" id="reportTribeSelect">
+                                <select class="form-select form-control-modern" id="reportTribeSelect" aria-label="Report tribe filter">
                                     <option value="">All Tribes</option>
                                 </select>
                             </div>
                             <div class="d-grid gap-2 mt-4">
-                                <button class="btn btn-primary-modern" onclick="generateReportPreview()">
-                                    <i class="bi bi-file-earmark-richtext"></i> Generate Preview
+                                <button type="button" class="btn btn-primary-modern" onclick="generateReportPreview()">
+                                    <i class="bi bi-file-earmark-richtext" aria-hidden="true"></i> Generate Preview
                                 </button>
-                                <button class="btn btn-dark" onclick="printReport()">
-                                    <i class="bi bi-printer"></i> Print
+                                <button type="button" class="btn btn-dark" onclick="printReport()">
+                                    <i class="bi bi-printer" aria-hidden="true"></i> Print
                                 </button>
                             </div>
                         </div>
@@ -324,7 +370,7 @@
                     <div class="col-lg-9">
                         <div id="reportPreviewArea">
                             <div class="d-flex flex-column align-items-center justify-content-center text-white-50" style="height: 600px;">
-                                <i class="bi bi-file-earmark-break fs-1 mb-3 opacity-50"></i>
+                                <i class="bi bi-file-earmark-break fs-1 mb-3 opacity-50" aria-hidden="true"></i>
                                 <p>Select parameters and click "Generate Preview"</p>
                             </div>
                         </div>
@@ -333,21 +379,33 @@
             </div>
 
             <!-- LOGS VIEW -->
-            <div class="tab-pane fade" id="logs-view">
+            <div class="tab-pane fade" id="logs-view" role="tabpanel" aria-labelledby="tab-logs">
                 <div class="card-modern">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                         <div>
-                            <h5 class="fw-bold mb-1"><i class="bi bi-journal-text text-primary me-2"></i>System Audit Trail</h5>
+                            <h2 class="h5 fw-bold text-dark mb-1"><i class="bi bi-journal-text text-primary me-2" aria-hidden="true"></i>System Audit Trail</h2>
                             <span class="text-secondary small">Tracks all edits and deletions made in the system.</span>
                         </div>
-                        <button class="btn btn-light border btn-sm" onclick="loadLogs()">
-                            <i class="bi bi-arrow-clockwise me-1"></i> Refresh Logs
-                        </button>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <div class="search-input-wrap" style="min-width: 210px;">
+                                <i class="bi bi-search search-icon" aria-hidden="true"></i>
+                                <input type="text" id="logSearchInput" class="form-control form-control-modern" placeholder="Filter logs..." aria-label="Filter audit logs by keyword" oninput="filterLogs()">
+                            </div>
+                            <select id="logActionFilter" class="form-select form-control-modern" style="width: auto;" aria-label="Filter logs by action type" onchange="filterLogs()">
+                                <option value="">All Actions</option>
+                                <option value="EDIT">EDIT</option>
+                                <option value="DELETE">DELETE</option>
+                                <option value="SYNC">SYNC</option>
+                            </select>
+                            <button type="button" class="btn btn-secondary-modern" onclick="loadLogs()">
+                                <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh
+                            </button>
+                        </div>
                     </div>
                     <div class="table-container">
                         <table class="table table-modern">
                             <thead>
-                                <tr><th>Date & Time</th><th>Action</th><th>Record Name</th><th>Details</th></tr>
+                                <tr><th>Date &amp; Time</th><th>Action</th><th>Record Name</th><th>Details</th></tr>
                             </thead>
                             <tbody id="logsTableBody">
                                 <tr><td colspan="4" class="text-center py-5 text-muted">Loading logs...</td></tr>
@@ -357,39 +415,50 @@
                 </div>
             </div>
         </div>
-    </div>
+    </main>
+
+    <footer class="container-fluid px-3 px-md-4 no-print">
+        <div class="app-footer">
+            <span>System Developed by <strong class="text-dark">Junniell Mahinay</strong></span>
+            <span class="app-version-pill" id="appVersionBadge">Version v2.0.0</span>
+        </div>
+    </footer>
 
     <!-- Modals -->
-    <div class="modal fade" id="viewModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal fade" id="viewModal" tabindex="-1" aria-labelledby="viewModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 1rem;">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold text-primary"><i class="bi bi-person-badge me-2"></i>Profile Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header border-bottom px-4 py-3">
+                    <h2 class="modal-title h5 fw-bold text-dark" id="viewModalTitle">
+                        <i class="bi bi-person-badge text-primary me-2" aria-hidden="true"></i>Profile Details
+                    </h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4" id="viewModalBody"></div>
-                <div class="modal-footer border-0 bg-light rounded-bottom">
-                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary-modern" onclick="printProfile()">
-                        <i class="bi bi-printer"></i> Print Profile
+                <div class="modal-footer border-top bg-light rounded-bottom px-4 py-3">
+                    <button type="button" class="btn btn-secondary-modern" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary-modern px-3" onclick="printProfile()">
+                        <i class="bi bi-printer" aria-hidden="true"></i> Print Profile
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 1rem;">
-                <div class="modal-header border-bottom">
-                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2 text-warning"></i>Edit Record</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header border-bottom px-4 py-3">
+                    <h2 class="modal-title h5 fw-bold text-dark" id="editModalTitle">
+                        <i class="bi bi-pencil-square me-2 text-warning" aria-hidden="true"></i>Edit Youth Record
+                    </h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4" id="editModalBody"></div>
-                <div class="modal-footer border-0 bg-light rounded-bottom">
-                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary-modern" onclick="saveEditedRecord()">
-                        <i class="bi bi-save"></i> Save Changes
+                <div class="modal-footer border-top bg-light rounded-bottom px-4 py-3">
+                    <button type="button" class="btn btn-secondary-modern" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary-modern px-3" onclick="saveEditedRecord()">
+                        <i class="bi bi-check2-circle" aria-hidden="true"></i> Save Changes
                     </button>
                 </div>
             </div>

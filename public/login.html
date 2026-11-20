@@ -5,110 +5,288 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - SK Youth Management System</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    
+    <link rel="icon" href="/favicon.ico" />
+
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <style>
+        body {
+            background-color: var(--light);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 1.25rem;
+        }
+        .login-wrapper {
+            max-width: 980px;
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 1.25rem;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        @media (min-width: 768px) {
+            .login-wrapper {
+                flex-direction: row;
+                min-height: 580px;
+            }
+        }
+        .intro-side {
+            background: linear-gradient(155deg, #2563eb 0%, #1e3a8a 100%);
+            color: #ffffff;
+            padding: 2.75rem 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            flex: 1;
+        }
+        .intro-side::before {
+            content: '';
+            position: absolute;
+            top: -35%;
+            right: -35%;
+            width: 95%;
+            height: 170%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 70%);
+            pointer-events: none;
+        }
+        .intro-side .logos {
+            display: flex;
+            gap: 0.85rem;
+            margin-bottom: 1.5rem;
+            z-index: 1;
+        }
+        .intro-side .logos img {
+            width: 68px;
+            height: 68px;
+            object-fit: contain;
+            background: #ffffff;
+            padding: 6px;
+            border-radius: 50%;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.22);
+        }
+        .intro-title {
+            font-size: 1.9rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            line-height: 1.2;
+            margin-bottom: 0.85rem;
+            z-index: 1;
+        }
+        .intro-subtitle {
+            font-size: 0.975rem;
+            color: #f8fafc;
+            line-height: 1.6;
+            margin-bottom: 1.75rem;
+            z-index: 1;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            z-index: 1;
+        }
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            margin-bottom: 0.7rem;
+            font-size: 0.9rem;
+            color: #eff6ff;
+        }
+        .feature-list li i {
+            color: #fde047;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .form-side {
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 1.05;
+        }
+        .auth-switcher {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: var(--surface-subtle);
+            border: 1px solid var(--border);
+            border-radius: 0.65rem;
+            padding: 0.25rem;
+            margin-bottom: 1.75rem;
+        }
+        .auth-switcher button {
+            border: none;
+            background: transparent;
+            color: var(--secondary);
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.45rem;
+            transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .auth-switcher button.active {
+            background: var(--surface);
+            color: var(--primary-dark);
+            box-shadow: var(--shadow-sm);
+        }
+        .form-header {
+            margin-bottom: 1.4rem;
+        }
+        .form-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            letter-spacing: -0.02em;
+            margin-bottom: 0.3rem;
+        }
+        .form-header p {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        .auth-input-group {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            background: var(--surface);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .auth-input-group:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-ring);
+        }
+        .auth-input-group .input-group-text {
+            background-color: var(--surface-subtle);
+            border: none;
+            color: var(--muted);
+        }
+        .auth-input-group .form-control-modern {
+            border: none;
+            box-shadow: none !important;
+        }
+        .auth-input-group .btn-eye {
+            border: none;
+            background-color: var(--surface);
+            color: var(--secondary);
+            padding: 0 0.85rem;
+        }
+        .auth-input-group .btn-eye:hover {
+            background-color: var(--surface-subtle);
+            color: var(--dark);
+        }
+        .toggle-link {
+            color: var(--primary);
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        .toggle-link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+        @media (max-width: 767.98px) {
+            .intro-side, .form-side {
+                padding: 1.75rem 1.5rem;
+            }
+            .intro-title {
+                font-size: 1.55rem;
+            }
+        }
+    </style>
     <!-- Firebase SDK v10 (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
-
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; padding: 20px; }
-        .login-wrapper { max-width: 1000px; width: 100%; background: #ffffff; border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08); overflow: hidden; display: flex; flex-direction: column; }
-        @media (min-width: 768px) { .login-wrapper { flex-direction: row; height: 650px; } }
-        .intro-side { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: #ffffff; padding: 3rem; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; flex: 1; }
-        .intro-side::before { content: ''; position: absolute; top: -50%; right: -50%; width: 100%; height: 200%; background: rgba(255, 255, 255, 0.05); transform: rotate(30deg); pointer-events: none; }
-        .intro-side .logos { display: flex; gap: 15px; margin-bottom: 1.5rem; z-index: 1; }
-        .intro-side .logos img { width: 75px; height: 75px; object-fit: contain; background: #ffffff; padding: 8px; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: transform 0.3s ease; }
-        .intro-side .logos img:hover { transform: scale(1.05); }
-        .intro-title { font-size: 2.2rem; font-weight: 700; margin-bottom: 1rem; z-index: 1; }
-        .intro-subtitle { font-size: 1.1rem; opacity: 0.9; line-height: 1.6; margin-bottom: 2rem; z-index: 1; }
-        .feature-list { list-style: none; padding: 0; margin: 0; z-index: 1; }
-        .feature-list li { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 0.95rem; opacity: 0.9; }
-        .form-side { padding: 3rem; display: flex; flex-direction: column; justify-content: center; flex: 1; overflow-y: auto; }
-        .form-header { margin-bottom: 2rem; }
-        .form-header h2 { font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; }
-        .form-header p { color: #64748b; font-size: 0.95rem; }
-        .form-control-modern { background-color: #f1f5f9; border: 1px solid transparent; padding: 0.8rem 1rem; border-radius: 10px; font-size: 0.95rem; transition: all 0.3s; }
-        .form-control-modern:focus { background-color: #ffffff; border-color: #1a73e8; box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.1); }
-        .btn-primary-modern { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); border: none; padding: 0.8rem; border-radius: 10px; font-weight: 600; letter-spacing: 0.5px; transition: all 0.3s; }
-        .btn-primary-modern:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(26, 115, 232, 0.3); }
-        .toggle-link { color: #1a73e8; cursor: pointer; text-decoration: none; font-weight: 600; }
-        .toggle-link:hover { text-decoration: underline; }
-    </style>
 </head>
 <body>
 
-    <div class="login-wrapper">
-        <div class="intro-side">
+    <main class="login-wrapper">
+        <section class="intro-side" aria-label="System overview">
             <div class="logos">
-                <img src="https://drive.google.com/thumbnail?id=1UqcRFlPUFnGarFC7LRfE4gMlz71ZYx6m&sz=s1000" alt="LGU Malungon Logo" title="LGU Malungon">
-                <img src="https://drive.google.com/thumbnail?id=1ovjAoz-t8OHyPkAPH37lmEsLmA4aow4C&sz=s1000" alt="SK Federation Logo" title="SK Federation Malungon">
+                <img src="https://drive.google.com/thumbnail?id=1UqcRFlPUFnGarFC7LRfE4gMlz71ZYx6m&sz=s1000" width="68" height="68" alt="LGU Malungon Seal">
+                <img src="https://drive.google.com/thumbnail?id=1ovjAoz-t8OHyPkAPH37lmEsLmA4aow4C&sz=s1000" width="68" height="68" alt="SK Federation Malungon Logo">
             </div>
             <h1 class="intro-title">SK Youth Profiling System</h1>
             <p class="intro-subtitle">
                 Empowering the Municipality of Malungon, Sarangani Province through a centralized, data-driven approach to youth governance and development.
             </p>
             <ul class="feature-list">
-                <li><i class="bi bi-check-circle-fill text-warning"></i> Comprehensive Youth Registry</li>
-                <li><i class="bi bi-check-circle-fill text-warning"></i> Real-time Demographic Analytics</li>
-                <li><i class="bi bi-check-circle-fill text-warning"></i> Automated Masterlist & Reports</li>
-                <li><i class="bi bi-check-circle-fill text-warning"></i> Secure Audit Trails</li>
+                <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Comprehensive Youth Registry</span></li>
+                <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Real-time Demographic Analytics</span></li>
+                <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Automated Masterlist &amp; Reports</span></li>
+                <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Secure Audit Trails</span></li>
             </ul>
-        </div>
+        </section>
 
-        <div class="form-side">
+        <section class="form-side" aria-label="Account authentication">
+            <div class="auth-switcher" role="tablist" aria-label="Authentication mode">
+                <button type="button" id="switchLoginBtn" class="active" role="tab" aria-selected="true" onclick="showAuthMode('login')">Sign In</button>
+                <button type="button" id="switchRegBtn" role="tab" aria-selected="false" onclick="showAuthMode('register')">Create Account</button>
+            </div>
+
             <!-- LOGIN FORM -->
             <div id="loginSection">
                 <div class="form-header">
                     <h2>Welcome Back</h2>
-                    <p>Please enter your credentials to access the dashboard.</p>
+                    <p>Enter your credentials to access the dashboard.</p>
                 </div>
                 <form id="loginForm" onsubmit="handleLogin(event)">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-secondary small text-uppercase">Username</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-0"><i class="bi bi-person text-secondary"></i></span>
-                            <input type="text" class="form-control form-control-modern" id="loginUser" required>
+                        <label class="form-label-modern" for="loginUser">Username</label>
+                        <div class="input-group auth-input-group">
+                            <span class="input-group-text"><i class="bi bi-person" aria-hidden="true"></i></span>
+                            <input type="text" class="form-control form-control-modern" id="loginUser" autocomplete="username" placeholder="Enter your username" required>
                         </div>
                     </div>
                     <div class="mb-4">
-                        <label class="form-label fw-semibold text-secondary small text-uppercase">Password</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-0"><i class="bi bi-lock text-secondary"></i></span>
-                            <input type="password" class="form-control form-control-modern" id="loginPass" required>
-                            <button class="btn btn-light border-0 text-secondary" type="button" onclick="toggleVisibility('loginPass', this)">
-                                <i class="bi bi-eye"></i>
+                        <label class="form-label-modern" for="loginPass">Password</label>
+                        <div class="input-group auth-input-group">
+                            <span class="input-group-text"><i class="bi bi-lock" aria-hidden="true"></i></span>
+                            <input type="password" class="form-control form-control-modern" id="loginPass" autocomplete="current-password" placeholder="Enter your password" required>
+                            <button class="btn btn-eye" type="button" onclick="toggleVisibility('loginPass', this)" aria-label="Show password">
+                                <i class="bi bi-eye" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-primary-modern w-100 text-white mt-2" id="loginBtn">
-                        Sign In <i class="bi bi-arrow-right ms-2"></i>
+                    <button type="submit" class="btn btn-primary-modern w-100 mt-1" id="loginBtn">
+                        <span>Sign In</span> <i class="bi bi-arrow-right" aria-hidden="true"></i>
                     </button>
                 </form>
                 <div class="text-center mt-4">
-                    <p class="text-muted small">Don't have an account? <span class="toggle-link" onclick="toggleForms()">Register here</span></p>
+                    <p class="text-muted small mb-0">Don't have an account? <button type="button" class="toggle-link" onclick="showAuthMode('register')">Register here</button></p>
                 </div>
             </div>
 
-            <!-- REGISTRATION FORM (Hidden by default) -->
+            <!-- REGISTRATION FORM -->
             <div id="registerSection" style="display: none;">
                 <div class="form-header">
                     <h2>Create Account</h2>
-                    <p>Register to manage youth data.</p>
+                    <p>Register your Barangay SK Council or Admin account.</p>
                 </div>
                 <form id="registerForm" onsubmit="handleRegister(event)">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-secondary small text-uppercase">Role / Barangay</label>
+                        <label class="form-label-modern" for="regBarangay">Role / Barangay</label>
                         <select class="form-select form-control-modern" id="regBarangay" required onchange="toggleMasterKey()">
                             <option value="" disabled selected>Select your Barangay</option>
-                            <option value="System Admin" class="text-primary fw-bold">🌟 System Admin</option>
+                            <option value="System Admin" class="text-primary fw-bold">System Admin (Municipal)</option>
                             <option value="Alkikan">Alkikan</option>
                             <option value="Ampon">Ampon</option>
                             <option value="Atlae">Atlae</option>
@@ -143,36 +321,40 @@
                         </select>
                     </div>
 
-                    <!-- SECRET ADMIN PASSWORD FIELD (Hidden normally) -->
                     <div class="mb-3" id="masterKeySection" style="display: none;">
-                        <label class="form-label fw-bold text-danger small text-uppercase">Default Admin Password</label>
-                        <input type="password" class="form-control form-control-modern border-danger" id="regMasterKey" placeholder="Required to create Admin">
+                        <label class="form-label-modern text-danger" for="regMasterKey">Default Admin Password</label>
+                        <input type="password" class="form-control form-control-modern border-danger" id="regMasterKey" placeholder="Required to create Admin account">
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-secondary small text-uppercase">Desired Username</label>
-                        <input type="text" class="form-control form-control-modern" id="regUser" required>
+                        <label class="form-label-modern" for="regUser">Desired Username</label>
+                        <input type="text" class="form-control form-control-modern" id="regUser" autocomplete="username" placeholder="Choose a username" required>
                     </div>
                     <div class="mb-4">
-                        <label class="form-label fw-semibold text-secondary small text-uppercase">Desired Password</label>
-                        <div class="input-group">
-                            <input type="password" class="form-control form-control-modern" id="regPass" required>
-                            <button class="btn btn-light border-0 text-secondary" type="button" onclick="toggleVisibility('regPass', this)">
-                                <i class="bi bi-eye"></i>
+                        <label class="form-label-modern" for="regPass">Desired Password</label>
+                        <div class="input-group auth-input-group">
+                            <input type="password" class="form-control form-control-modern" id="regPass" autocomplete="new-password" placeholder="Choose a strong password" required>
+                            <button class="btn btn-eye" type="button" onclick="toggleVisibility('regPass', this)" aria-label="Show password">
+                                <i class="bi bi-eye" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-primary-modern w-100 text-white mt-2" id="regBtn">
+                    <button type="submit" class="btn btn-primary-modern w-100 mt-1" id="regBtn">
                         Create Account
                     </button>
                 </form>
                 <div class="text-center mt-4">
-                    <p class="text-muted small">Already have an account? <span class="toggle-link" onclick="toggleForms()">Sign In</span></p>
+                    <p class="text-muted small mb-0">Already have an account? <button type="button" class="toggle-link" onclick="showAuthMode('login')">Sign In</button></p>
                 </div>
             </div>
 
-        </div>
-    </div>
+            <div class="mt-4 pt-3 border-top d-flex flex-wrap justify-content-between align-items-center gap-2 text-secondary" style="font-size: 0.78rem;">
+                <span>System Developed by <strong class="text-dark">Junniell Mahinay</strong></span>
+                <span class="app-version-pill">Version v2.0.0</span>
+            </div>
+
+        </section>
+    </main>
 
     <script>
         function toggleVisibility(inputId, btn) {
@@ -181,22 +363,42 @@
             if (input.type === 'password') {
                 input.type = 'text';
                 icon.classList.replace('bi-eye', 'bi-eye-slash');
+                btn.setAttribute('aria-label', 'Hide password');
             } else {
                 input.type = 'password';
                 icon.classList.replace('bi-eye-slash', 'bi-eye');
+                btn.setAttribute('aria-label', 'Show password');
+            }
+        }
+
+        function showAuthMode(mode) {
+            const login = document.getElementById('loginSection');
+            const reg = document.getElementById('registerSection');
+            const switchLoginBtn = document.getElementById('switchLoginBtn');
+            const switchRegBtn = document.getElementById('switchRegBtn');
+
+            if (mode === 'login') {
+                login.style.display = 'block';
+                reg.style.display = 'none';
+                switchLoginBtn.classList.add('active');
+                switchLoginBtn.setAttribute('aria-selected', 'true');
+                switchRegBtn.classList.remove('active');
+                switchRegBtn.setAttribute('aria-selected', 'false');
+                document.getElementById('loginUser').focus();
+            } else {
+                login.style.display = 'none';
+                reg.style.display = 'block';
+                switchRegBtn.classList.add('active');
+                switchRegBtn.setAttribute('aria-selected', 'true');
+                switchLoginBtn.classList.remove('active');
+                switchLoginBtn.setAttribute('aria-selected', 'false');
+                document.getElementById('regBarangay').focus();
             }
         }
 
         function toggleForms() {
             const login = document.getElementById('loginSection');
-            const reg = document.getElementById('registerSection');
-            if (login.style.display === 'none') {
-                login.style.display = 'block';
-                reg.style.display = 'none';
-            } else {
-                login.style.display = 'none';
-                reg.style.display = 'block';
-            }
+            showAuthMode(login.style.display === 'none' ? 'login' : 'register');
         }
 
         function toggleMasterKey() {
@@ -324,7 +526,7 @@
                 });
 
                 Swal.fire('Success', 'Account created successfully! You can now log in.', 'success').then(() => {
-                    toggleForms();
+                    showAuthMode('login');
                     document.getElementById('loginUser').value = username;
                 });
             } catch (err) {

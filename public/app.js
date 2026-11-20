@@ -11,6 +11,8 @@ if (!sessionStorage.getItem('sk_auth_token')) {
 const USER_ROLE = sessionStorage.getItem('sk_user_role') || 'Barangay User';
 const USER_BRGY = sessionStorage.getItem('sk_user_barangay') || '';
 const USERNAME = sessionStorage.getItem('sk_username') || 'User';
+const APP_VERSION = 'v2.0.0';
+let syncToastShown = false;
 
 function escapeHtml(str) {
     if (str === null || str === undefined) return '';
@@ -53,6 +55,8 @@ let pendingCsvRecords = [];
 setInterval(() => {
     const now = new Date();
     const clockEl = document.getElementById('clock');
+    const versionEl = document.getElementById('appVersionBadge');
+    if (versionEl) versionEl.textContent = `Version ${APP_VERSION}`;
     if (clockEl) {
         clockEl.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
@@ -131,6 +135,8 @@ async function initializeApp() {
         renderDashboardStats(stats);
         renderCharts(currentChartData);
         renderTable();
+        updateFilterSummary();
+        if (USER_ROLE === 'Admin') checkPendingSync();
 
         const totalRecordsLabel = document.getElementById('totalRecordsLabel');
         if (totalRecordsLabel) {
@@ -143,6 +149,15 @@ async function initializeApp() {
 }
 
 function applyRoleBasedUI() {
+    const roleBadge = document.getElementById('userRoleBadge');
+    if (roleBadge) {
+        if (USER_ROLE === 'Admin') {
+            roleBadge.innerHTML = `<i class="bi bi-shield-check" aria-hidden="true"></i><span>Admin &bull; All Barangays</span>`;
+        } else {
+            roleBadge.innerHTML = `<i class="bi bi-geo-alt-fill" aria-hidden="true"></i><span>SK Council &bull; ${escapeHtml(USER_BRGY || 'Barangay')}</span>`;
+        }
+    }
+
     if (USER_ROLE !== 'Admin') {
         const brgyHeader = document.querySelector('.brand-section p');
         if (brgyHeader) brgyHeader.innerText = `Barangay ${USER_BRGY}, Municipality of Malungon`;
@@ -272,6 +287,7 @@ function populateFilters(filters) {
 
     const activeBrgy = USER_ROLE === 'Admin' ? (document.getElementById('barangayFilter')?.value || '') : USER_BRGY;
     updateSitioDropdown(activeBrgy);
+    bindFilterAutoApply();
 
     const tSelect = document.getElementById('tribeFilter');
     if (tSelect) {
@@ -292,6 +308,54 @@ function populateFilters(filters) {
             rtSelect.appendChild(opt);
         });
     }
+}
+
+
+function updateFilterSummary() {
+    const resultBadge = document.getElementById('filterResultBadge');
+    const chipsBar = document.getElementById('activeFiltersBar');
+    if (resultBadge) {
+        resultBadge.textContent = `Showing ${filteredData.length.toLocaleString()} of ${globalData.length.toLocaleString()} records`;
+    }
+    if (!chipsBar) return;
+
+    const chips = [];
+    const brgy = USER_ROLE === 'Admin' ? document.getElementById('barangayFilter')?.value : USER_BRGY;
+    const sitio = document.getElementById('sitioFilter')?.value;
+    const sex = document.getElementById('sexFilter')?.value;
+    const tribe = document.getElementById('tribeFilter')?.value;
+    const eligibilityEl = document.getElementById('eligibilityFilter');
+    const eligibilityText = eligibilityEl?.options[eligibilityEl.selectedIndex]?.text;
+
+    if (brgy) chips.push(`Barangay: ${brgy}`);
+    if (sitio) chips.push(`Sitio/Purok: ${sitio}`);
+    if (sex) chips.push(`Sex: ${sex}`);
+    if (tribe) chips.push(`Tribe: ${tribe}`);
+    if (eligibilityEl && eligibilityEl.value !== 'all') chips.push(`Eligibility: ${eligibilityText}`);
+
+    if (chips.length === 0) {
+        chipsBar.classList.add('d-none');
+        chipsBar.innerHTML = '';
+    } else {
+        chipsBar.classList.remove('d-none');
+        chipsBar.innerHTML = `<span class="small text-muted fw-semibold me-1">Active:</span>` +
+            chips.map(c => `<span class="filter-chip">${escapeHtml(c)}</span>`).join('');
+    }
+}
+
+function bindFilterAutoApply() {
+    const filterIds = ['barangayFilter', 'sitioFilter', 'sexFilter', 'tribeFilter', 'eligibilityFilter'];
+    filterIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el || el.dataset.autoFilterBound) return;
+        el.addEventListener('change', () => {
+            if (id === 'barangayFilter') {
+                updateSitioDropdown(el.value);
+            }
+            applyFilters();
+        });
+        el.dataset.autoFilterBound = 'true';
+    });
 }
 
 function applyFilters() {
@@ -322,6 +386,7 @@ function applyFilters() {
     renderDashboardStats(stats);
     renderCharts(currentChartData);
     renderTable();
+    updateFilterSummary();
 }
 
 function clearFilters() {
@@ -788,6 +853,59 @@ async function startCsvImport() {
     }
 }
 
+
+function updateSyncNotification(count) {
+    const num = Number(count) || 0;
+    const navBadge = document.getElementById('registrySyncBadge');
+    const btnBadge = document.getElementById('syncBtnBadge');
+    const banner = document.getElementById('syncNoticeBanner');
+    const bannerText = document.getElementById('syncNoticeText');
+
+    if (USER_ROLE !== 'Admin' || num <= 0) {
+        navBadge?.classList.add('d-none');
+        btnBadge?.classList.add('d-none');
+        banner?.classList.add('d-none');
+        return;
+    }
+
+    const label = num > 99 ? '99+' : String(num);
+    if (navBadge) {
+        navBadge.textContent = label;
+        navBadge.classList.remove('d-none');
+    }
+    if (btnBadge) {
+        btnBadge.textContent = label;
+        btnBadge.classList.remove('d-none');
+    }
+    if (banner && bannerText) {
+        bannerText.innerHTML = `<strong>${num.toLocaleString()}</strong> new web form ${num === 1 ? 'submission is' : 'submissions are'} available to sync to Staging.`;
+        banner.classList.remove('d-none');
+    }
+
+    if (!syncToastShown && window.Swal) {
+        syncToastShown = true;
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            title: `${num.toLocaleString()} new web form ${num === 1 ? 'record' : 'records'} ready to sync`,
+            showConfirmButton: false,
+            timer: 4500,
+            timerProgressBar: true
+        });
+    }
+}
+
+async function checkPendingSync() {
+    if (USER_ROLE !== 'Admin') return;
+    try {
+        const snap = await db.collection('online_submissions').get();
+        updateSyncNotification(snap.size);
+    } catch (err) {
+        console.warn('Could not check online submissions:', err);
+    }
+}
+
 // --- ONLINE SUBMISSIONS SYNC (eProfiling) ---
 
 async function triggerWebSync() {
@@ -837,6 +955,7 @@ async function triggerWebSync() {
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
+                updateSyncNotification(0);
                 Swal.fire('Success!', `Approved and merged ${count} records into Cloud Firestore.`, 'success');
                 initializeApp();
             }
