@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SK Youth Profiling - Workflow Guide</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-light: #eff6ff;
+            --secondary: #10b981;
+            --secondary-light: #ecfdf5;
+            --accent: #f59e0b;
+            --accent-light: #fffbeb;
+            --dark: #0f172a;
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --bg-color: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--dark) 0%, #1e293b 100%);
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -50px;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: var(--bg-color);
+            transform: skewY(-3deg);
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: #cbd5e1;
+            font-weight: 300;
+        }
+
+        /* Timeline Container */
+        .container {
+            max-width: 1000px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+        }
+
+        .intro-box {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            margin-bottom: 4rem;
+            border-top: 4px solid var(--primary);
+        }
+
+        .intro-box p {
+            font-size: 1.1rem;
+            color: var(--text-main);
+        }
+
+        .intro-box strong {
+            color: var(--primary);
+        }
+
+        /* The Timeline */
+        .timeline {
+            position: relative;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50px;
+            width: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+
+        .step {
+            position: relative;
+            margin-bottom: 4rem;
+            padding-left: 120px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .step.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .step-icon {
+            position: absolute;
+            left: 20px;
+            top: 0;
+            width: 64px;
+            height: 64px;
+            background: white;
+            border: 4px solid var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--primary);
+            box-shadow: 0 0 0 8px var(--bg-color), 0 5px 15px rgba(26,115,232,0.3);
+            z-index: 2;
+        }
+
+        /* Alternating Colors for Steps */
+        .step:nth-child(2) .step-icon { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 8px var(--bg-color), 0 5px 15px rgba(245,158,11,0.3); }
+        .step:nth-child(3) .step-icon { border-color: var(--secondary); color: var(--secondary); box-shadow: 0 0 0 8px var(--bg-color), 0 5px 15px rgba(16,185,129,0.3); }
+        .step:nth-child(4) .step-icon { border-color: #8b5cf6; color: #8b5cf6; box-shadow: 0 0 0 8px var(--bg-color), 0 5px 15px rgba(139,92,246,0.3); }
+
+        .step-content {
+            background: white;
+            border-radius: 1rem;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            position: relative;
+        }
+
+        .step-content::before {
+            content: '';
+            position: absolute;
+            top: 24px;
+            left: -10px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            transform: rotate(45deg);
+            border-bottom: 1px solid #e2e8f0;
+            border-left: 1px solid #e2e8f0;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .step-num {
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            background: #f1f5f9;
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+        }
+
+        .step-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .step-desc {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        /* The Example Box */
+        .example-box {
+            background: var(--bg-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border-left: 4px solid var(--primary);
+            margin-top: 1.5rem;
+        }
+
+        .example-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .example-header i {
+            color: var(--accent);
+        }
+
+        .mock-ui {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 1rem;
+        }
+
+        .highlight {
+            color: var(--primary);
+            font-weight: 600;
+            background: var(--primary-light);
+            padding: 0.1rem 0.3rem;
+            border-radius: 0.25rem;
+        }
+
+        /* Specific Mock UI elements */
+        .mock-qr {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .qr-placeholder {
+            width: 50px;
+            height: 50px;
+            background: repeating-linear-gradient(45deg, #000, #000 2px, #fff 2px, #fff 4px);
+            border: 2px solid #000;
+            padding: 2px;
+        }
+
+        .mock-app-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0.5rem 0;
+        }
+        .mock-app-row:last-child { border: none; }
+
+        .mock-receipt {
+            background: #f0fdf4;
+            border-left: 4px solid #10b981;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            color: #065f46;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark);
+            color: white;
+            text-align: center;
+            padding: 3rem 2rem;
+            margin-top: 4rem;
+        }
+
+        @media (max-width: 768px) {
+            .timeline::before {
+                left: 30px;
+            }
+            .step {
+                padding-left: 80px;
+            }
+            .step-icon {
+                left: 6px;
+                width: 48px;
+                height: 48px;
+                font-size: 1.2rem;
+            }
+            .step-content::before {
+                display: none;
+            }
+            h1 {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-content">
+            <h1>The Data Journey</h1>
+            <p class="subtitle">A complete workflow example of the SK Youth Profiling System from paper to dashboard.</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="intro-box">
+            <p><i class="fas fa-book-open text-primary me-2"></i> <strong>Meet Juan.</strong> To understand how the system works, let's follow the journey of <strong>Juan Dela Cruz</strong>, a 19-year-old out-of-school youth from Barangay Banate, Malungon. Watch how his data moves through the 4 steps of the system.</p>
+        </div>
+
+        <div class="timeline">
+            
+            <!-- Step 1 -->
+            <div class="step">
+                <div class="step-icon"><i class="fas fa-print"></i></div>
+                <div class="step-content">
+                    <div class="step-header">
+                        <span class="step-num">Step 1</span>
+                        <h3 class="step-title">Generate Forms</h3>
+                    </div>
+                    <p class="step-desc">The SK Secretary opens the <strong>Form Generator</strong> to create official, serialized forms specifically for their barangay before heading to the field.</p>
+                    
+                    <div class="example-box">
+                        <div class="example-header"><i class="fas fa-play-circle"></i> The Scenario</div>
+                        <p>The SK Secretary selects <strong>"Banate"</strong> and Year <strong>"2025"</strong>. They print 50 forms. The system generates unique Control Numbers for every single page.</p>
+                        
+                        <div class="mock-ui mock-qr">
+                            <div class="qr-placeholder"></div>
+                            <div>
+                                <div><strong>Barangay:</strong> Banate</div>
+                                <div><strong>Control No:</strong> <span class="highlight">SK-Mal-05-25-00001</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step">
+                <div class="step-icon"><i class="fas fa-mobile-screen-button"></i></div>
+                <div class="step-content">
+                    <div class="step-header">
+                        <span class="step-num">Step 2</span>
+                        <h3 class="step-title">Collect & Encode</h3>
+                    </div>
+                    <p class="step-desc">Enumerators visit households. The youth fill out the physical paper forms (and sign the data privacy consent). The enumerator then quickly encodes this into the offline Android App using standardized codes.</p>
+                    
+                    <div class="example-box" style="border-left-color: var(--accent);">
+                        <div class="example-header"><i class="fas fa-play-circle" style="color: var(--accent);"></i> The Scenario</div>
+                        <p>Juan fills out Form #00001. Enumerator Maria takes the paper and encodes Juan's answers into the Android App. To save time and prevent typos, the app uses shortcodes.</p>
+                        
+                        <div class="mock-ui">
+                            <div class="mock-app-row"><span>Name:</span> <strong>Juan Dela Cruz</strong></div>
+                            <div class="mock-app-row"><span>Tribe Input:</span> <strong><span class="highlight">BLA</span></strong> (stands for Blaan)</div>
+                            <div class="mock-app-row"><span>Employment:</span> <strong><span class="highlight">U</span></strong> (stands for Unemployed)</div>
+                            <div class="mock-app-row"><span>Sector:</span> <strong><span class="highlight">OSY</span></strong> (Out-of-School Youth)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step">
+                <div class="step-icon"><i class="fas fa-cloud-arrow-up"></i></div>
+                <div class="step-content">
+                    <div class="step-header">
+                        <span class="step-num">Step 3</span>
+                        <h3 class="step-title">Upload to Cloud</h3>
+                    </div>
+                    <p class="step-desc">Once profiling is done, the enumerator exports a CSV file from the Android App and uploads it via the web <strong>CSV Uploader</strong>. The system automatically translates all the shortcodes back to readable text.</p>
+                    
+                    <div class="example-box" style="border-left-color: var(--secondary);">
+                        <div class="example-header"><i class="fas fa-play-circle" style="color: var(--secondary);"></i> The Scenario</div>
+                        <p>Maria exports a file named <code>SK_Survey_Banate.csv</code> and drops it into the Uploader. The system reads the code <strong>"BLA"</strong> and saves it to the central database as <strong>"Blaan"</strong>.</p>
+                        
+                        <div class="mock-ui mock-receipt">
+                            <i class="fas fa-check-circle me-2"></i> <strong>Upload Successful!</strong><br>
+                            Barangay: Banate<br>
+                            Records Appended: 50 <br>
+                            (Including Juan Dela Cruz)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="step">
+                <div class="step-icon" style="border-color: #8b5cf6; color: #8b5cf6;"><i class="fas fa-chart-pie"></i></div>
+                <div class="step-content">
+                    <div class="step-header">
+                        <span class="step-num">Step 4</span>
+                        <h3 class="step-title">Analyze & Act</h3>
+                    </div>
+                    <p class="step-desc">The SK Chairperson logs into the <strong>SKYMS Dashboard</strong>. The database is instantly updated. They can filter data, view charts, and print official Master Lists for specific programs.</p>
+                    
+                    <div class="example-box" style="border-left-color: #8b5cf6;">
+                        <div class="example-header"><i class="fas fa-play-circle" style="color: #8b5cf6;"></i> The Scenario</div>
+                        <p>The SK is planning an Alternative Learning System (ALS) program. The Chairperson filters the dashboard:</p>
+                        <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: var(--text-muted); font-size: 0.95rem;">
+                            <li>Barangay: <strong>Banate</strong></li>
+                            <li>Youth Sector: <strong>Out-of-School Youth</strong></li>
+                        </ul>
+                        <p><strong>Juan Dela Cruz</strong> appears on the Master List. The SK prints the report and reaches out to Juan to enroll him in the program. <strong>Data-driven governance in action!</strong></p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <footer>
+        <h2><i class="fas fa-check-double text-secondary"></i> Process Complete</h2>
+        <p style="opacity: 0.8; margin-top: 1rem;">From a blank piece of paper to a life-changing youth program.</p>
+    </footer>
+
+    <script>
+        // Simple Intersection Observer to animate steps on scroll
+        document.addEventListener("DOMContentLoaded", function() {
+            const steps = document.querySelectorAll('.step');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, {
+                threshold: 0.2 // Trigger when 20% of the element is visible
+            });
+
+            steps.forEach(step => {
+                observer.observe(step);
+            });
+        });
+    </script>
+</body>
+</html>

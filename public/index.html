@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SK Youth Management System</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="icon" href="/favicon.ico" />
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <!-- Linked standard CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Small style addition to ensure logos look great in the header */
+        .header-logos img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: #fff;
+            padding: 3px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="container-fluid px-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="brand-section d-flex align-items-center gap-3">
+                    <!-- Updated with Official Logos -->
+                    <div class="header-logos d-flex gap-2">
+                        <img src="https://drive.google.com/thumbnail?id=1UqcRFlPUFnGarFC7LRfE4gMlz71ZYx6m&sz=s1000" alt="LGU Logo">
+                        <img src="https://drive.google.com/thumbnail?id=1ovjAoz-t8OHyPkAPH37lmEsLmA4aow4C&sz=s1000" alt="SK Fed Logo">
+                    </div>
+                    <div>
+                        <h1 class="m-0 fs-5 fw-bold text-dark">SK Youth Profiling Data</h1>
+                        <p class="m-0 text-secondary" style="font-size: 0.85rem;">Municipality of Malungon, Sarangani Province</p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-light text-dark border"><i class="bi bi-clock me-1"></i> <span id="clock">Loading...</span></span>
+                    <!-- LOGOUT BUTTON -->
+                    <button class="btn btn-sm btn-outline-danger shadow-sm fw-bold" onclick="logout()"><i class="bi bi-box-arrow-right me-1"></i> Logout</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-fluid px-4 py-4">
+        <div class="d-flex justify-content-center mb-4">
+            <ul class="nav nav-pills" id="mainTab" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#dashboard-view">
+                        <i class="bi bi-grid-1x2 me-2"></i>Dashboard
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#registry-view">
+                        <i class="bi bi-people me-2"></i>Registry
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#reports-view">
+                        <i class="bi bi-printer me-2"></i>Reports
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#logs-view" onclick="loadLogs()">
+                        <i class="bi bi-journal-text me-2"></i>Audit Trail
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="https://script.google.com/macros/s/AKfycbwcqJwkuLxSpj4xj_BSjZA8B7KpEmpW31X_-CZj3CeDda0LeUvwgQogO4heDVGYh1oA/exec" target="_blank">
+                        <i class="bi bi-file-earmark-plus me-2"></i>Form Generator
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="https://script.google.com/macros/s/AKfycbyPao3DFICJLTm4J_GS9euBd_7zGYGEnDQkoMIutdEv0mtYHwMAW7daNKkOXoARBIs2/exec" target="_blank">
+                        <i class="bi bi-cloud-upload me-2"></i>CSV Uploader
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="tab-content">
+            <!-- DASHBOARD VIEW -->
+            <div class="tab-pane fade show active" id="dashboard-view">
+                <div class="card-modern mb-4">
+                    <div class="d-flex align-items-center mb-3 text-primary">
+                        <i class="bi bi-funnel-fill me-2"></i>
+                        <span class="fw-bold text-uppercase small ls-1">Data Filters</span>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <label class="form-label-modern">Barangay</label>
+                            <select class="form-select form-control-modern" id="barangayFilter">
+                                <option value="">All Barangays</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label-modern">Sitio/Purok</label>
+                            <select class="form-select form-control-modern" id="sitioFilter">
+                                <option value="">All</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label-modern">Gender</label>
+                            <select class="form-select form-control-modern" id="sexFilter">
+                                <option value="">All</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label-modern">Tribe</label>
+                            <select class="form-select form-control-modern" id="tribeFilter">
+                                <option value="">All Tribes</option>
+                            </select>
+                        </div>
+                         <div class="col-md-2">
+                            <label class="form-label-modern">Eligibility</label>
+                            <select class="form-select form-control-modern" id="eligibilityFilter">
+                                <option value="all">All</option>
+                                <option value="qualified" selected>Qualified (15-30)</option>
+                                <option value="overaged">Over-aged (31+)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end gap-2">
+                            <button class="btn btn-primary-modern w-100" onclick="applyFilters()">
+                                <i class="bi bi-check-lg"></i> Apply
+                            </button>
+                            <button class="btn btn-light border w-50" onclick="clearFilters()" title="Reset">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="dashboardStats" class="row g-3 mb-4">
+                    <div class="col-md-3"><div class="skeleton skeleton-block"></div></div>
+                    <div class="col-md-3"><div class="skeleton skeleton-block"></div></div>
+                    <div class="col-md-3"><div class="skeleton skeleton-block"></div></div>
+                    <div class="col-md-3"><div class="skeleton skeleton-block"></div></div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <span class="chart-title"><i class="bi bi-bar-chart-fill text-primary me-2"></i>Population per Barangay (Vertical)</span>
+                            </div>
+                            <div id="barangayChart" style="height: 450px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <span class="chart-title"><i class="bi bi-pie-chart-fill text-success me-2"></i>Employment Status</span>
+                            </div>
+                            <div id="employmentChart" style="height: 350px;"></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <span class="chart-title"><i class="bi bi-diagram-3-fill text-danger me-2"></i>Tribe Distribution</span>
+                            </div>
+                            <div id="tribeChart" style="height: 350px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                         <div class="chart-card">
+                            <div class="chart-header">
+                                <span class="chart-title"><i class="bi bi-mortarboard-fill text-info me-2"></i>Education</span>
+                            </div>
+                            <div id="educationChart" style="height: 300px;"></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="chart-card">
+                           <div class="chart-header">
+                               <span class="chart-title"><i class="bi bi-people-fill text-warning me-2"></i>Age Distribution</span>
+                           </div>
+                           <div id="ageChart" style="height: 300px;"></div>
+                       </div>
+                   </div>
+                   <div class="col-lg-4">
+                        <div class="chart-card">
+                           <div class="chart-header">
+                               <span class="chart-title"><i class="bi bi-collection-fill text-secondary me-2"></i>Youth Sector</span>
+                           </div>
+                           <div id="sectorChart" style="height: 300px;"></div>
+                       </div>
+                   </div>
+                </div>
+            </div>
+
+            <!-- REGISTRY VIEW -->
+            <div class="tab-pane fade" id="registry-view">
+                <div class="card-modern">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                        <div>
+                            <h5 class="fw-bold mb-1">Youth Registry</h5>
+                            <span class="text-secondary small" id="totalRecordsLabel">Loading database...</span>
+                        </div>
+                        <div class="d-flex gap-2 w-100" style="max-width: 600px;"> 
+                            <div class="position-relative flex-grow-1">
+                                <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
+                                <input type="text" id="tableSearch" class="form-control form-control-modern ps-5 w-100" placeholder="Search..." onkeyup="filterTable()">
+                            </div>
+                            
+                            <button class="btn-action btn-sync" id="btnSyncWeb" onclick="triggerWebSync()" title="Pull Online Form Data">
+                                <i class="bi bi-cloud-arrow-down-fill fs-6"></i> 
+                                <span class="d-none d-sm-inline">Sync Web Forms</span>
+                            </button>
+                            
+                            <button class="btn-action btn-export" onclick="exportToCSV()" title="Download Filtered Data">
+                                <i class="bi bi-filetype-csv fs-6"></i> 
+                                <span class="d-none d-sm-inline">Export</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Full Name</th>
+                                    <th>Age</th>
+                                    <th>Sex</th>
+                                    <th>Barangay</th>
+                                    <th>Tribe</th>
+                                    <th>Civil Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="registryTableBody">
+                                <tr><td colspan="8" class="p-4"><div class="skeleton skeleton-text w-100"></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div class="text-secondary small">
+                            Showing <span id="startIdx" class="fw-bold text-dark">0</span> to <span id="endIdx" class="fw-bold text-dark">0</span> of <span id="totalIdx" class="fw-bold text-dark">0</span>
+                        </div>
+                        <nav><ul class="pagination pagination-sm mb-0 gap-1" id="paginationControls"></ul></nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REPORTS VIEW -->
+            <div class="tab-pane fade" id="reports-view">
+                <div class="row g-4">
+                    <div class="col-lg-3">
+                        <div class="card-modern sticky-top" style="top: 90px;">
+                            <h6 class="fw-bold text-uppercase text-secondary small mb-3 ls-1">Configuration</h6>
+                            <div class="mb-3">
+                                <label class="form-label-modern">Select Barangay</label>
+                                <select class="form-select form-control-modern" id="reportBarangaySelect">
+                                    <option value="">All Barangays</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label-modern">Report Format</label>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-primary active btn-sm text-start p-2" onclick="setReportType('masterlist', this)">
+                                        <i class="bi bi-table me-2"></i> Master List
+                                    </button>
+                                    <button class="btn btn-outline-primary btn-sm text-start p-2" onclick="setReportType('summary', this)">
+                                        <i class="bi bi-pie-chart me-2"></i> Statistics Summary
+                                    </button>
+                                </div>
+                            </div>
+                            <hr class="border-secondary opacity-25">
+                            <div class="mb-3">
+                                <label class="form-label-modern">Filters</label>
+                                <select class="form-select form-control-modern mb-2" id="reportEligibilitySelect">
+                                    <option value="qualified">Qualified (15-30)</option>
+                                    <option value="overaged">Over-aged (31+)</option>
+                                    <option value="all">All Records</option>
+                                </select>
+                                <select class="form-select form-control-modern mb-2" id="reportEmploymentSelect">
+                                    <option value="all">All Employment Status</option>
+                                    <option value="Employed">Employed</option>
+                                    <option value="Unemployed">Unemployed</option>
+                                    <option value="Student">Student</option>
+                                </select>
+                                <select class="form-select form-control-modern" id="reportTribeSelect">
+                                    <option value="">All Tribes</option>
+                                </select>
+                            </div>
+                            <div class="d-grid gap-2 mt-4">
+                                <button class="btn btn-primary-modern" onclick="generateReportPreview()">
+                                    <i class="bi bi-file-earmark-richtext"></i> Generate Preview
+                                </button>
+                                <button class="btn btn-dark" onclick="printReport()">
+                                    <i class="bi bi-printer"></i> Print
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-9">
+                        <div id="reportPreviewArea">
+                            <div class="d-flex flex-column align-items-center justify-content-center text-white-50" style="height: 600px;">
+                                <i class="bi bi-file-earmark-break fs-1 mb-3 opacity-50"></i>
+                                <p>Select parameters and click "Generate Preview"</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOGS VIEW -->
+            <div class="tab-pane fade" id="logs-view">
+                <div class="card-modern">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-1"><i class="bi bi-journal-text text-primary me-2"></i>System Audit Trail</h5>
+                            <span class="text-secondary small">Tracks all edits and deletions made in the system.</span>
+                        </div>
+                        <button class="btn btn-light border btn-sm" onclick="loadLogs()">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Refresh Logs
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr><th>Date & Time</th><th>Action</th><th>Record Name</th><th>Details</th></tr>
+                            </thead>
+                            <tbody id="logsTableBody">
+                                <tr><td colspan="4" class="text-center py-5 text-muted">Loading logs...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal fade" id="viewModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 1rem;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-primary"><i class="bi bi-person-badge me-2"></i>Profile Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4" id="viewModalBody"></div>
+                <div class="modal-footer border-0 bg-light rounded-bottom">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary-modern" onclick="printProfile()">
+                        <i class="bi bi-printer"></i> Print Profile
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 1rem;">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2 text-warning"></i>Edit Record</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4" id="editModalBody"></div>
+                <div class="modal-footer border-0 bg-light rounded-bottom">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary-modern" onclick="saveEditedRecord()">
+                        <i class="bi bi-save"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="printArea"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Linked JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>

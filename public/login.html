@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - SK Youth Management System</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; padding: 20px; }
+        .login-wrapper { max-width: 1000px; width: 100%; background: #ffffff; border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08); overflow: hidden; display: flex; flex-direction: column; }
+        @media (min-width: 768px) { .login-wrapper { flex-direction: row; height: 650px; } }
+        .intro-side { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: #ffffff; padding: 3rem; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; flex: 1; }
+        .intro-side::before { content: ''; position: absolute; top: -50%; right: -50%; width: 100%; height: 200%; background: rgba(255, 255, 255, 0.05); transform: rotate(30deg); pointer-events: none; }
+        .intro-side .logos { display: flex; gap: 15px; margin-bottom: 1.5rem; z-index: 1; }
+        .intro-side .logos img { width: 75px; height: 75px; object-fit: contain; background: #ffffff; padding: 8px; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: transform 0.3s ease; }
+        .intro-side .logos img:hover { transform: scale(1.05); }
+        .intro-title { font-size: 2.2rem; font-weight: 700; margin-bottom: 1rem; z-index: 1; }
+        .intro-subtitle { font-size: 1.1rem; opacity: 0.9; line-height: 1.6; margin-bottom: 2rem; z-index: 1; }
+        .feature-list { list-style: none; padding: 0; margin: 0; z-index: 1; }
+        .feature-list li { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 0.95rem; opacity: 0.9; }
+        .form-side { padding: 3rem; display: flex; flex-direction: column; justify-content: center; flex: 1; overflow-y: auto; }
+        .form-header { margin-bottom: 2rem; }
+        .form-header h2 { font-weight: 700; color: #1e293b; margin-bottom: 0.5rem; }
+        .form-header p { color: #64748b; font-size: 0.95rem; }
+        .form-control-modern { background-color: #f1f5f9; border: 1px solid transparent; padding: 0.8rem 1rem; border-radius: 10px; font-size: 0.95rem; transition: all 0.3s; }
+        .form-control-modern:focus { background-color: #ffffff; border-color: #1a73e8; box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.1); }
+        .btn-primary-modern { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); border: none; padding: 0.8rem; border-radius: 10px; font-weight: 600; letter-spacing: 0.5px; transition: all 0.3s; }
+        .btn-primary-modern:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(26, 115, 232, 0.3); }
+        .toggle-link { color: #1a73e8; cursor: pointer; text-decoration: none; font-weight: 600; }
+        .toggle-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="login-wrapper">
+        <div class="intro-side">
+            <div class="logos">
+                <img src="https://drive.google.com/thumbnail?id=1UqcRFlPUFnGarFC7LRfE4gMlz71ZYx6m&sz=s1000" alt="LGU Malungon Logo" title="LGU Malungon">
+                <img src="https://drive.google.com/thumbnail?id=1ovjAoz-t8OHyPkAPH37lmEsLmA4aow4C&sz=s1000" alt="SK Federation Logo" title="SK Federation Malungon">
+            </div>
+            <h1 class="intro-title">SK Youth Profiling System</h1>
+            <p class="intro-subtitle">
+                Empowering the Municipality of Malungon, Sarangani Province through a centralized, data-driven approach to youth governance and development.
+            </p>
+            <ul class="feature-list">
+                <li><i class="bi bi-check-circle-fill text-warning"></i> Comprehensive Youth Registry</li>
+                <li><i class="bi bi-check-circle-fill text-warning"></i> Real-time Demographic Analytics</li>
+                <li><i class="bi bi-check-circle-fill text-warning"></i> Automated Masterlist & Reports</li>
+                <li><i class="bi bi-check-circle-fill text-warning"></i> Secure Audit Trails</li>
+            </ul>
+        </div>
+
+        <div class="form-side">
+            <!-- LOGIN FORM -->
+            <div id="loginSection">
+                <div class="form-header">
+                    <h2>Welcome Back</h2>
+                    <p>Please enter your credentials to access the dashboard.</p>
+                </div>
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary small text-uppercase">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0"><i class="bi bi-person text-secondary"></i></span>
+                            <input type="text" class="form-control form-control-modern" id="loginUser" required>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-secondary small text-uppercase">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0"><i class="bi bi-lock text-secondary"></i></span>
+                            <input type="password" class="form-control form-control-modern" id="loginPass" required>
+                            <button class="btn btn-light border-0 text-secondary" type="button" onclick="toggleVisibility('loginPass', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-primary-modern w-100 text-white mt-2" id="loginBtn">
+                        Sign In <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+                </form>
+                <div class="text-center mt-4">
+                    <p class="text-muted small">Don't have an account? <span class="toggle-link" onclick="toggleForms()">Register here</span></p>
+                </div>
+            </div>
+
+            <!-- REGISTRATION FORM (Hidden by default) -->
+            <div id="registerSection" style="display: none;">
+                <div class="form-header">
+                    <h2>Create Account</h2>
+                    <p>Register to manage youth data.</p>
+                </div>
+                <form id="registerForm" onsubmit="handleRegister(event)">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary small text-uppercase">Role / Barangay</label>
+                        <select class="form-select form-control-modern" id="regBarangay" required onchange="toggleMasterKey()">
+                            <option value="" disabled selected>Select your Barangay</option>
+                            <option value="System Admin" class="text-primary fw-bold">🌟 System Admin</option>
+                            <option value="Alkikan">Alkikan</option>
+                            <option value="Ampon">Ampon</option>
+                            <option value="Atlae">Atlae</option>
+                            <option value="Banahaw">Banahaw</option>
+                            <option value="Banate">Banate</option>
+                            <option value="Blaan">Blaan</option>
+                            <option value="Datal Batong">Datal Batong</option>
+                            <option value="Datal Bila">Datal Bila</option>
+                            <option value="Datal Tampal">Datal Tampal</option>
+                            <option value="J.P. Laurel">J.P. Laurel</option>
+                            <option value="Kawayan">Kawayan</option>
+                            <option value="Kibala">Kibala</option>
+                            <option value="Kiblat">Kiblat</option>
+                            <option value="Kinabalan">Kinabalan</option>
+                            <option value="Lower Mainit">Lower Mainit</option>
+                            <option value="Lutay">Lutay</option>
+                            <option value="Malabod">Malabod</option>
+                            <option value="Malalag Cogon">Malalag Cogon</option>
+                            <option value="Malandag">Malandag</option>
+                            <option value="Malungon Gamay">Malungon Gamay</option>
+                            <option value="Nagpan">Nagpan</option>
+                            <option value="Panamin">Panamin</option>
+                            <option value="Poblacion">Poblacion</option>
+                            <option value="San Juan">San Juan</option>
+                            <option value="San Miguel">San Miguel</option>
+                            <option value="San Roque">San Roque</option>
+                            <option value="Talus">Talus</option>
+                            <option value="Tamban">Tamban</option>
+                            <option value="Upper Biangan">Upper Biangan</option>
+                            <option value="Upper Lumabat">Upper Lumabat</option>
+                            <option value="Upper Mainit">Upper Mainit</option>
+                        </select>
+                    </div>
+
+                    <!-- SECRET ADMIN PASSWORD FIELD (Hidden normally) -->
+                    <div class="mb-3" id="masterKeySection" style="display: none;">
+                        <label class="form-label fw-bold text-danger small text-uppercase">Default Admin Password</label>
+                        <input type="password" class="form-control form-control-modern border-danger" id="regMasterKey" placeholder="Required to create Admin">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary small text-uppercase">Desired Username</label>
+                        <input type="text" class="form-control form-control-modern" id="regUser" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-secondary small text-uppercase">Desired Password</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control form-control-modern" id="regPass" required>
+                            <button class="btn btn-light border-0 text-secondary" type="button" onclick="toggleVisibility('regPass', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-primary-modern w-100 text-white mt-2" id="regBtn">
+                        Create Account
+                    </button>
+                </form>
+                <div class="text-center mt-4">
+                    <p class="text-muted small">Already have an account? <span class="toggle-link" onclick="toggleForms()">Sign In</span></p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // REPLACE THIS WITH YOUR NEW DEPLOYMENT URL IF NEEDED
+        const API_URL = "https://script.google.com/macros/s/AKfycbw28DvpQIRp1tzo1-HzCkelBOY9ypfjTPWti-4fyWP44NScbEO6y2LJx80Xar034VJI/exec";
+
+        function toggleVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.replace('bi-eye', 'bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.replace('bi-eye-slash', 'bi-eye');
+            }
+        }
+
+        function toggleForms() {
+            const login = document.getElementById('loginSection');
+            const reg = document.getElementById('registerSection');
+            if (login.style.display === 'none') {
+                login.style.display = 'block';
+                reg.style.display = 'none';
+            } else {
+                login.style.display = 'none';
+                reg.style.display = 'block';
+            }
+        }
+
+        // NEW: Shows Master Key input only if System Admin is chosen
+        function toggleMasterKey() {
+            const brgy = document.getElementById('regBarangay').value;
+            const mkSection = document.getElementById('masterKeySection');
+            if (brgy === 'System Admin') {
+                mkSection.style.display = 'block';
+                document.getElementById('regMasterKey').required = true;
+            } else {
+                mkSection.style.display = 'none';
+                document.getElementById('regMasterKey').required = false;
+                document.getElementById('regMasterKey').value = ''; // clear it
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Authenticating...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'login', username: loginUser.value, password: loginPass.value })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    sessionStorage.setItem('sk_auth_token', result.token);
+                    sessionStorage.setItem('sk_user_role', result.role);
+                    sessionStorage.setItem('sk_user_barangay', result.barangay);
+                    window.location.href = 'index.html'; 
+                } else {
+                    Swal.fire('Error', result.message || 'Invalid credentials', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Failed to connect to the server.', 'error');
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const btn = document.getElementById('regBtn');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ 
+                        action: 'register', 
+                        username: regUser.value, 
+                        password: regPass.value,
+                        barangay: regBarangay.value,
+                        masterKey: document.getElementById('regMasterKey').value // NEW: Send master key
+                    })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire('Success', result.message, 'success').then(() => {
+                        toggleForms(); // Switch back to login
+                        document.getElementById('loginUser').value = regUser.value;
+                    });
+                } else {
+                    Swal.fire('Error', result.message, 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Failed to connect to the server.', 'error');
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

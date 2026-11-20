@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SK Youth Profiling Form Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Icons (optional, for control panel) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    @page {
+      size: 8.5in 13.5in; /* custom legal 8.5 x 13.5 */
+      margin: 0.5in;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      line-height: 1.4;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .root-container {
+      display: flex;
+      max-width: 2000px;
+      margin: 0 auto;
+      gap: 25px;
+    }
+
+    /* ----- Control panel ----- */
+    .controls-panel {
+      width: 280px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+      position: sticky;
+      top: 20px;
+      height: fit-content;
+      border-top: 5px solid #1a73e8;
+    }
+
+    .controls-panel h1 {
+      font-size: 20px;
+      color: #0d47a1;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .controls-panel h1 i {
+      color: #fbbc04;
+    }
+
+    .panel-subtitle {
+      color: #666;
+      font-size: 13px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .control-group {
+      margin-bottom: 18px;
+    }
+
+    .control-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: #444;
+    }
+
+    .control-group select,
+    .control-group input[type="number"] {
+      width: 100%;
+      padding: 8px 10px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      transition: all 0.3s;
+    }
+
+    .control-group select:focus,
+    .control-group input[type="number"]:focus {
+      border-color: #1a73e8;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+    }
+
+    .range-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .range-inputs input {
+      flex: 1;
+      text-align: center;
+    }
+
+    .range-inputs span {
+      color: #777;
+      font-weight: 600;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s;
+      color: white;
+    }
+
+    .btn-primary {
+      background: linear-gradient(to right, #1a73e8, #0d47a1);
+    }
+
+    .btn-success {
+      background: linear-gradient(to right, #34a853, #2e7d32);
+    }
+
+    .btn-danger {
+      background: linear-gradient(to right, #ea4335, #c62828);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .stats {
+      background: #f8f9fa;
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 18px;
+      border-left: 4px solid #1a73e8;
+      font-size: 12px;
+    }
+
+    .stats h3 {
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #0d47a1;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    /* ----- Forms container + page wrapper ----- */
+    #forms-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .page {
+      width: 8.5in;
+      min-height: 13.5in; /* match custom legal height */
+      background: white;
+      padding: 0.5in;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      border-radius: 4px;
+      position: relative;
+      margin: 0 auto;
+      break-inside: avoid;
+    }
+
+    .form-counter {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: #1a73e8;
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    /* ----- Form layout styles ----- */
+    h1, h2, h3 {
+      text-align: center;
+      margin: 4px 0;
+    }
+    h1 {
+  font-size: 16px;
+  text-transform: uppercase;
+  margin-top: 4px;
+  margin-bottom: 0;   /* remove space under title */
+}
+    h2 {
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+    h3 {
+      font-size: 13px;
+    }
+    .header-text {
+      text-align: center;
+      font-weight: bold;
+      margin: 0;
+    }
+    .section-title {
+      font-weight: bold;
+      margin-top: 12px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+.note {
+  font-style: italic;
+  font-size: 11px;
+  text-align: center;
+  margin-top: 0;      /* no extra space above note */
+  margin-bottom: 6px; /* keep small space below */
+}
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+    .col {
+      flex: 1;
+      min-width: 150px;
+      padding-right: 8px;
+      box-sizing: border-box;
+    }
+    label {
+      display: inline-block;
+      margin-right: 4px;
+      font-weight: bold;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="date"],
+    input[type="number"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 3px 4px;
+      box-sizing: border-box;
+      font-size: 12px;
+    }
+    textarea {
+      min-height: 60px;
+      resize: vertical;
+    }
+    .checkbox-group,
+    .radio-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      margin-top: 2px;
+      margin-bottom: 4px;
+    }
+    .checkbox-item,
+    .radio-item {
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      font-size: 12px;
+    }
+    .checkbox-item input,
+    .radio-item input {
+      margin-right: 4px;
+    }
+    .signature-block {
+      margin-top: 16px;
+    }
+    .signature-line {
+      border-bottom: 1px solid #000;
+      width: 250px;
+      margin-top: 24px;
+      margin-bottom: 4px;
+    }
+    .small-label {
+      font-size: 11px;
+    }
+    hr {
+      margin: 10px 0;
+    }
+
+    /* Center header with logos + text */
+    .center-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;  /* center whole block */
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .center-header-logo {
+      width: 80px;
+      height: 80px;
+      flex-shrink: 0;
+    }
+    .center-header-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .center-header-text {
+      padding: 0 15px;
+    }
+
+    .skfed-logo {
+      width: 100px;   /* adjust these */
+      height: 100px;  /* to your preferred size */
+      margin-left: -10px; /* smaller gap; try 0px or even -4px if you want it tighter */
+    }
+
+    /* QR + control number */
+    .qr-info {
+  position: absolute;
+  top: 10px;
+  left: 10px;      /* was right: 10px;  -> move to left corner */
+  width: 80px;     /* smaller container (was 100px) */
+  text-align: center;
+  font-size: 9px;  /* a bit finer text */
+}
+
+.qr-code-placeholder {
+  width: 70px;     /* shrink QR area */
+  height: 70px;
+  margin-bottom: 4px;
+  border: none;    /* cleaner: remove border box */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-code-placeholder img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.control-no {
+  font-weight: 700;
+  font-size: 10px;   /* slightly smaller text */
+  background: transparent; /* no colored background */
+  padding: 0;
+  border-radius: 0;
+}
+
+
+    /* Loader + notification */
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+    .loader.active {
+      display: block;
+    }
+    .spinner {
+      border: 4px solid rgba(0,0,0,0.1);
+      border-radius: 50%;
+      border-top: 4px solid #1a73e8;
+      width: 36px;
+      height: 36px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #34a853;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.4s;
+      z-index: 1000;
+      font-size: 13px;
+    }
+    .notification.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Force IV. section to new printed page */
+    @media print {
+      .controls-panel,
+      .notification {
+        display: none !important;
+      }
+      .root-container {
+        display: block;
+        max-width: 100%;
+      }
+      .page {
+        margin: 0;
+        box-shadow: none;
+        border-radius: 0;
+        page-break-after: always;
+      }
+      .pagebreak-before {
+        page-break-before: always;
+        break-before: always;
+        margin-top: 1in;
+      }
+    }
+
+    @media (max-width: 1200px) {
+      .root-container {
+        flex-direction: column;
+      }
+      .controls-panel {
+        width: 100%;
+        position: static;
+      }
+    }
+  </style>
+
+  <!-- QR library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+</head>
+<body>
+<div class="root-container">
+  <!-- CONTROL PANEL -->
+  <div class="controls-panel">
+    <h1><i class="fas fa-file-contract"></i> SK Form Generator</h1>
+    <p class="panel-subtitle">Generate multiple SK Youth Profiling forms with barangay, year, and QR codes.</p>
+
+    <div class="control-group">
+      <label for="barangaySelect"><i class="fas fa-map-marker-alt"></i> Barangay</label>
+      <select id="barangaySelect" onchange="updateBarangayDisplay()">
+        <option value="01">Alkikan</option>
+        <option value="02">Ampon</option>
+        <option value="03">Atlae</option>
+        <option value="04">Banahaw</option>
+        <option value="05">Banate</option>
+        <option value="06">Blaan</option>
+        <option value="07">Datal Batong</option>
+        <option value="08">Datal Bila</option>
+        <option value="09">Datal Tampal</option>
+        <option value="10">J.P. Laurel</option>
+        <option value="11">Kawayan</option>
+        <option value="12">Kibala</option>
+        <option value="13">Kiblat</option>
+        <option value="14">Kinabalan</option>
+        <option value="15">Lower Mainit</option>
+        <option value="16">Lutay</option>
+        <option value="17">Malabod</option>
+        <option value="18">Malalag Cogon</option>
+        <option value="19">Malandag</option>
+        <option value="20">Malungon Gamay</option>
+        <option value="21">Nagpan</option>
+        <option value="22">Panamin</option>
+        <option value="23">Poblacion</option>
+        <option value="24">San Juan</option>
+        <option value="25">San Miguel</option>
+        <option value="26">San Roque</option>
+        <option value="27">Talus</option>
+        <option value="28">Tamban</option>
+        <option value="29">Upper Biangan</option>
+        <option value="30">Upper Lumabat</option>
+        <option value="31">Upper Mainit</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="yearSelect"><i class="fas fa-calendar-alt"></i> Year</label>
+      <select id="yearSelect">
+        <option value="25" selected>2025</option>
+        <option value="26">2026</option>
+        <option value="27">2027</option>
+        <option value="28">2028</option>
+        <option value="29">2029</option>
+        <option value="30">2030</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label><i class="fas fa-copy"></i> Generate Forms (Range)</label>
+      <div class="range-inputs">
+        <input type="number" id="batchStart" placeholder="Start" value="1" min="1">
+        <span>to</span>
+        <input type="number" id="batchEnd" placeholder="End" value="5" min="1">
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="generateBatchForms()">
+        <i class="fas fa-rocket"></i> Generate Forms
+      </button>
+      <button class="btn btn-success" onclick="window.print()">
+        <i class="fas fa-print"></i> Print All Forms
+      </button>
+      <button class="btn btn-danger" onclick="clearForms()">
+        <i class="fas fa-trash-alt"></i> Clear All
+      </button>
+    </div>
+
+    <div class="stats">
+      <h3><i class="fas fa-chart-bar"></i> Generation Stats</h3>
+      <div class="stat-item">
+        <span>Current Barangay:</span>
+        <span id="currentBarangay">-</span>
+      </div>
+      <div class="stat-item">
+        <span>Forms Generated:</span>
+        <span id="formsCount">0</span>
+      </div>
+      <div class="stat-item">
+        <span>Last Generated:</span>
+        <span id="lastGenerated">-</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORMS CONTAINER -->
+  <div id="forms-container">
+    <div class="loader" id="loader">
+      <div class="spinner"></div>
+      <p>Generating forms... Please wait</p>
+    </div>
+  </div>
+</div>
+
+<!-- Notification -->
+<div class="notification" id="notification">
+  <i class="fas fa-check-circle"></i>
+  <span id="notification-text">Forms generated successfully!</span>
+</div>
+
+<script>
+  const formsContainer = document.getElementById('forms-container');
+  const loader = document.getElementById('loader');
+  const notification = document.getElementById('notification');
+  const notificationText = document.getElementById('notification-text');
+  const formsCount = document.getElementById('formsCount');
+  const currentBarangay = document.getElementById('currentBarangay');
+  const lastGenerated = document.getElementById('lastGenerated');
+
+  document.addEventListener('DOMContentLoaded', function () {
+    updateBarangayDisplay();
+  });
+
+  function updateBarangayDisplay() {
+    const barangaySelect = document.getElementById('barangaySelect');
+    currentBarangay.textContent =
+      barangaySelect.options[barangaySelect.selectedIndex].text;
+  }
+
+  function showNotification(message) {
+    notificationText.textContent = message;
+    notification.className = 'notification show';
+    setTimeout(() => {
+      notification.classList.remove('show');
+    }, 3000);
+  }
+
+  function updateStats(count) {
+    formsCount.textContent = count;
+    lastGenerated.textContent = new Date().toLocaleTimeString();
+  }
+
+  function generateQRCode(text, elementId) {
+    try {
+      const qr = qrcode(0, 'L');
+      qr.addData(text);
+      qr.make();
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.innerHTML = qr.createImgTag(2, 0);
+        const img = element.querySelector('img');
+        if (img) {
+          img.style.width = '100%';
+          img.style.height = '100%';
+        }
+      }
+    } catch (error) {
+      console.error('QR Code Generation Error:', error);
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.innerHTML =
+          '<div style="color:red; font-size:8px; text-align:center;">QR Error</div>';
+      }
+    }
+  }
+
+  function generateFormContent(controlNo, formIndex) {
+    const qrId = `qr-${controlNo}`;
+    return `
+      <div class="page">
+        <div class="form-counter">${formIndex}</div>
+
+        <div class="qr-info">
+          <div id="${qrId}" class="qr-code-placeholder"></div>
+          <div class="control-no">Form No.: ${controlNo}</div>
+        </div>
+
+        <!-- CENTER HEADER -->
+        <div class="center-header">
+          <div class="center-header-logo">
+            <img src="https://drive.google.com/thumbnail?id=1S0T3ncvi5t3EHy9gssTN2l-kDjzJmvao&sz=w200" alt="LGU Logo">
+          </div>
+          <div class="center-header-text">
+            <p class="header-text">Republic of the Philippines</p>
+            <p class="header-text">Province of Sarangani</p>
+            <p class="header-text">Municipality of Malungon</p>
+            <p class="header-text">
+              Barangay <span class="barangay-name">______________________</span>
+            </p>
+          </div>
+          <div class="center-header-logo skfed-logo">
+            <img src="https://drive.google.com/thumbnail?id=1ZnoNOXcBn-jN7HWng1ORh77X-xaBAlY4&sz=w200" alt="SK Federation Logo">
+          </div>
+          </div>
+
+        <h1>Sangguniang Kabataan Youth Profiling Form</h1>
+        <p class="note">
+          (For use by all Barangay Sangguniang Kabataan within the Municipality of Malungon)
+        </p>
+
+        <!-- I. PERSONAL INFORMATION -->
+        <div class="section-title">I. PERSONAL INFORMATION</div>
+        <p class="note">(Please write legibly or encode clearly. Information provided will be treated with strict confidentiality.)</p>
+
+        <div class="row">
+          <div class="col">
+            <label>Full Name:</label>
+            <input type="text" name="full_name">
+          </div>
+          <div class="col">
+            <label>Nickname:</label>
+            <input type="text" name="nickname">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>Sex:</label>
+            <div class="radio-group">
+              <label class="radio-item"><input type="radio" name="sex-${controlNo}" value="Male">Male</label>
+              <label class="radio-item"><input type="radio" name="sex-${controlNo}" value="Female">Female</label>
+              <label class="radio-item"><input type="radio" name="sex-${controlNo}" value="Prefer not to say">Prefer not to say</label>
+            </div>
+          </div>
+          <div class="col">
+            <label>Date of Birth (MM/DD/YYYY):</label>
+            <input type="date" name="dob">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>Age:</label>
+            <input type="number" name="age" min="0">
+          </div>
+          <div class="col">
+            <label>Place of Birth:</label>
+            <input type="text" name="pob">
+          </div>
+          <div class="col">
+            <label>Civil Status:</label>
+            <div class="radio-group">
+              <label class="radio-item"><input type="radio" name="civil_status-${controlNo}" value="Single">Single</label>
+              <label class="radio-item"><input type="radio" name="civil_status-${controlNo}" value="Married">Married</label>
+              <label class="radio-item"><input type="radio" name="civil_status-${controlNo}" value="Widowed">Widowed</label>
+              <label class="radio-item"><input type="radio" name="civil_status-${controlNo}" value="Separated">Separated</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>Citizenship:</label>
+            <input type="text" name="citizenship">
+          </div>
+          <div class="col">
+            <label>Religion (Optional):</label>
+            <input type="text" name="religion">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>Complete Address:</label>
+            <input type="text" name="address">
+          </div>
+          <div class="col">
+            <label>Contact Number:</label>
+            <input type="text" name="contact_no">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>Email Address (if any):</label>
+            <input type="email" name="email">
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- II. EDUCATIONAL AND EMPLOYMENT PROFILE -->
+        <div class="section-title">II. EDUCATIONAL AND EMPLOYMENT PROFILE</div>
+
+        <div class="row">
+          <div class="col">
+            <label>Current Educational Status:</label>
+            <div class="radio-group">
+              <label class="radio-item"><input type="radio" name="educ_status-${controlNo}" value="In-School Youth">In-School Youth</label>
+              <label class="radio-item"><input type="radio" name="educ_status-${controlNo}" value="Out-of-School Youth">Out-of-School Youth</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>Highest Educational Attainment:</label>
+            <div class="radio-group">
+              <label class="checkbox-item"><input type="radio" name="highest_educ-${controlNo}" value="Elementary">Elementary</label>
+              <label class="checkbox-item"><input type="radio" name="highest_educ-${controlNo}" value="Junior HS">Junior HS</label>
+              <label class="checkbox-item"><input type="radio" name="highest_educ-${controlNo}" value="Senior HS">Senior HS</label>
+              <label class="checkbox-item"><input type="radio" name="highest_educ-${controlNo}" value="Vocational">Vocational</label>
+              <label class="checkbox-item"><input type="radio" name="highest_educ-${controlNo}" value="College">College</label>
+              <label class="checkbox-item"><input type="radio" name="highest_educ-${controlNo}" value="Post-Graduate">Post-Graduate</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>Name of School/Institution (if enrolled):</label>
+            <input type="text" name="school">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>Course/Strand (if applicable):</label>
+            <input type="text" name="course">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>Occupation / Employment Status:</label>
+            <div class="radio-group">
+              <label class="radio-item"><input type="radio" name="employment_status-${controlNo}" value="Student">Student</label>
+              <label class="radio-item"><input type="radio" name="employment_status-${controlNo}" value="Employed">Employed</label>
+              <label class="radio-item"><input type="radio" name="employment_status-${controlNo}" value="Self-Employed">Self-Employed</label>
+              <label class="radio-item"><input type="radio" name="employment_status-${controlNo}" value="Unemployed">Unemployed</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>Nature of Work (if employed):</label>
+            <input type="text" name="nature_of_work">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>Skills / Talents:</label>
+            <input type="text" name="skills">
+          </div>
+          <div class="col">
+            <label>Language Spoken:</label>
+            <input type="text" name="languages">
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- III. INVOLVEMENT AND PARTICIPATION -->
+        <div class="section-title">III. INVOLVEMENT AND PARTICIPATION</div>
+
+        <div class="row">
+          <div class="col">
+            <label>Are you a member of any youth organization? <i>If not, put N/A</i></label>
+            <div class="radio-group">
+              <label class="radio-item"><input type="radio" name="youth_org_member-${controlNo}" value="Yes">Yes</label>
+              <label class="radio-item"><input type="radio" name="youth_org_member-${controlNo}" value="No">No</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>If yes, specify organization(s):</label>
+            <input type="text" name="orgs">
+          </div>
+          <div class="col">
+            <label>Leadership Position (if any):</label>
+            <input type="text" name="lead_pos">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>Volunteer Activities Involved In:</label>
+            <textarea name="volunteer_activities"></textarea>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label>Areas of Interest:</label>
+            <div class="checkbox-group">
+              <label class="checkbox-item"><input type="checkbox" name="interest-${controlNo}[]" value="Education">Education</label>
+              <label class="checkbox-item"><input type="checkbox" name="interest-${controlNo}[]" value="Health">Health</label>
+              <label class="checkbox-item"><input type="checkbox" name="interest-${controlNo}[]" value="Environment">Environment</label>
+              <label class="checkbox-item"><input type="checkbox" name="interest-${controlNo}[]" value="Sports">Sports</label>
+              <label class="checkbox-item"><input type="checkbox" name="interest-${controlNo}[]" value="Arts & Culture">Arts & Culture</label>
+              <label class="checkbox-item"><input type="checkbox" name="interest-${controlNo}[]" value="Livelihood">Livelihood</label>
+              <label class="checkbox-item"><input type="checkbox" name="interest-${controlNo}[]" value="Governance">Governance</label>
+              <label class="checkbox-item"><input type="checkbox" name="interest-${controlNo}[]" value="Digital Innovation">Digital Innovation</label>
+              <label class="checkbox-item"><input type="checkbox" name="interest-${controlNo}[]" value="Disaster Response">Disaster Response</label>
+              <label class="checkbox-item"><input type="checkbox" name="interest-${controlNo}[]" value="Gender Equality">Gender Equality</label>
+              <label class="checkbox-item"><input type="checkbox" name="interest-${controlNo}[]" value="Entrepreneurship">Entrepreneurship</label>
+              <label class="checkbox-item">
+                <input type="checkbox" name="interest-${controlNo}[]" value="Others">Others (please specify):
+              </label>
+              <input type="text" name="interest_others">
+            </div>
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- IV. YOUTH SECTOR IDENTIFICATION (forced to page 2) -->
+        <div class="pagebreak-before">
+          <div class="section-title">IV. YOUTH SECTOR IDENTIFICATION</div>
+          <p class="note">(To ensure inclusivity in youth development planning. Please check if applicable.)</p>
+
+          <div class="checkbox-group">
+            <label class="checkbox-item"><input type="checkbox" name="sector-${controlNo}[]" value="Out-of-School Youth">Out-of-School Youth</label>
+            <label class="checkbox-item"><input type="checkbox" name="sector-${controlNo}[]" value="In-School Youth">In-School Youth</label>
+            <label class="checkbox-item"><input type="checkbox" name="sector-${controlNo}[]" value="Working Youth">Working Youth</label>
+            <label class="checkbox-item"><input type="checkbox" name="sector-${controlNo}[]" value="Youth with Disability (PWD)">Youth with Disability (PWD)</label>
+            <label class="checkbox-item"><input type="checkbox" name="sector-${controlNo}[]" value="Indigenous Youth">Indigenous Youth</label>
+            <label class="checkbox-item"><input type="checkbox" name="sector-${controlNo}[]" value="Single Parent Youth">Single Parent Youth</label>
+            <label class="checkbox-item"><input type="checkbox" name="sector-${controlNo}[]" value="LGBTQIA+ Youth">LGBTQIA+ Youth</label>
+            <label class="checkbox-item"><input type="checkbox" name="sector-${controlNo}[]" value="Youth in Conflict with the Law (CICL)">Youth in Conflict with the Law (CICL)</label>
+            <label class="checkbox-item">
+              <input type="checkbox" name="sector-${controlNo}[]" value="Other">Other (specify):
+            </label>
+            <input type="text" name="sector_other">
+          </div>
+
+          <hr>
+
+          <!-- V. HOUSEHOLD AND COMMUNITY PROFILE -->
+          <div class="section-title">V. HOUSEHOLD AND COMMUNITY PROFILE (Confidential)</div>
+
+          <div class="row">
+            <div class="col">
+              <label>Total Household Members:</label>
+              <input type="number" name="hh_members" min="0">
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label>Estimated Monthly Household Income:</label>
+              <div class="radio-group">
+                <label class="radio-item"><input type="radio" name="income-${controlNo}" value="Below 10000">Below ₱10,000</label>
+                <label class="radio-item"><input type="radio" name="income-${controlNo}" value="10001-20000">₱10,001–₱20,000</label>
+                <label class="radio-item"><input type="radio" name="income-${controlNo}" value="20001-30000">₱20,001–₱30,000</label>
+                <label class="radio-item"><input type="radio" name="income-${controlNo}" value="Above 30000">Above ₱30,000</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label>Access to Internet:</label>
+              <div class="radio-group">
+                <label class="radio-item"><input type="radio" name="internet_access-${controlNo}" value="Yes">Yes</label>
+                <label class="radio-item"><input type="radio" name="internet_access-${controlNo}" value="No">No</label>
+              </div>
+            </div>
+            <div class="col">
+              <label>Type of Internet Connection:</label>
+              <div class="radio-group">
+                <label class="radio-item"><input type="radio" name="internet_type-${controlNo}" value="Mobile Data">Mobile Data</label>
+                <label class="radio-item"><input type="radio" name="internet_type-${controlNo}" value="Wi-Fi">Wi-Fi</label>
+                <label class="radio-item"><input type="radio" name="internet_type-${controlNo}" value="None">None</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label>Preferred Mode of Receiving Announcements:</label>
+              <div class="checkbox-group">
+                <label class="checkbox-item"><input type="checkbox" name="announce_mode-${controlNo}[]" value="Text Message">Text Message</label>
+                <label class="checkbox-item"><input type="checkbox" name="announce_mode-${controlNo}[]" value="Facebook Messenger">Facebook Messenger</label>
+                <label class="checkbox-item"><input type="checkbox" name="announce_mode-${controlNo}[]" value="Barangay Posting">Barangay Posting</label>
+                <label class="checkbox-item"><input type="checkbox" name="announce_mode-${controlNo}[]" value="Email">Email</label>
+              </div>
+            </div>
+          </div>
+
+          <hr>
+
+          <!-- VI. PERSONAL ASPIRATIONS AND NEEDS -->
+          <div class="section-title">VI. PERSONAL ASPIRATIONS AND NEEDS</div>
+          <p class="note">(Your honest answers will help the SK design better programs for you.)</p>
+
+          <div class="row">
+            <div class="col">
+              <label>1. What are your top 3 personal goals in the next 5 years?</label>
+              <textarea name="goals"></textarea>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label>2. What kind of programs would you like the SK or LGU to offer?</label>
+              <div class="checkbox-group">
+                <label class="checkbox-item"><input type="checkbox" name="programs-${controlNo}[]" value="Skills Training">Skills Training</label>
+                <label class="checkbox-item"><input type="checkbox" name="programs-${controlNo}[]" value="Scholarships">Scholarships</label>
+                <label class="checkbox-item"><input type="checkbox" name="programs-${controlNo}[]" value="Job Opportunities">Job Opportunities</label>
+                <label class="checkbox-item"><input type="checkbox" name="programs-${controlNo}[]" value="Youth Leadership Camps">Youth Leadership Camps</label>
+                <label class="checkbox-item"><input type="checkbox" name="programs-${controlNo}[]" value="Sports & Arts Activities">Sports & Arts Activities</label>
+                <label class="checkbox-item"><input type="checkbox" name="programs-${controlNo}[]" value="Health & Wellness">Health & Wellness</label>
+                <label class="checkbox-item"><input type="checkbox" name="programs-${controlNo}[]" value="Mental Health Support">Mental Health Support</label>
+                <label class="checkbox-item"><input type="checkbox" name="programs-${controlNo}[]" value="Entrepreneurship / Livelihood">Entrepreneurship / Livelihood</label>
+                <label class="checkbox-item"><input type="checkbox" name="programs-${controlNo}[]" value="Environmental Programs">Environmental Programs</label>
+                <label class="checkbox-item">
+                  <input type="checkbox" name="programs-${controlNo}[]" value="Others">Others:
+                </label>
+                <input type="text" name="programs_others">
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label>3. How would you like to participate in community projects?</label>
+              <div class="checkbox-group">
+                <label class="checkbox-item"><input type="checkbox" name="participation-${controlNo}[]" value="Volunteer">As a Volunteer</label>
+                <label class="checkbox-item"><input type="checkbox" name="participation-${controlNo}[]" value="Leader">As a Leader</label>
+                <label class="checkbox-item"><input type="checkbox" name="participation-${controlNo}[]" value="Planner">As a Planner</label>
+                <label class="checkbox-item"><input type="checkbox" name="participation-${controlNo}[]" value="Participant">As a Participant</label>
+              </div>
+            </div>
+          </div>
+
+          <hr>
+
+          <!-- VII. DATA PRIVACY NOTICE -->
+          <div class="section-title">VII. DATA PRIVACY NOTICE</div>
+
+          <p>
+            Pursuant to <strong>Republic Act No. 10173 (Data Privacy Act of 2012)</strong>, all information provided in this form shall be kept confidential and used solely for youth development planning, program implementation, and policy formulation by the Sangguniang Kabataan, the Local Youth Development Office (LYDO), and the Local Government Unit (LGU) of Malungon.
+          </p>
+          <p>
+            Your data will not be shared with third parties without your consent. You have the right to access, correct, or withdraw your information by coordinating with your local SK Council.
+          </p>
+          <p>
+            By signing below, you certify that the above information is true and correct to the best of your knowledge and that you voluntarily consent to the collection and use of your data for youth development purposes.
+          </p>
+
+          <div class="signature-block">
+            <div class="row">
+              <div class="col">
+                <div class="signature-line"></div>
+                <span class="small-label">Signature</span>
+              </div>
+              <div class="col">
+                <label>Date Accomplished:</label>
+                <input type="date" name="date_accomplished">
+              </div>
+            </div>
+
+            <div class="row" style="margin-top: 12px;">
+              <div class="col">
+                <label>Name of SK Data Collector:</label>
+                <input type="text" name="data_collector">
+              </div>
+              <div class="col">
+                <label>Date Received:</label>
+                <input type="date" name="date_received">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function clearForms() {
+    formsContainer.innerHTML = `
+      <div class="loader" id="loader">
+        <div class="spinner"></div>
+        <p>Generating forms... Please wait</p>
+      </div>
+    `;
+    formsCount.textContent = '0';
+    lastGenerated.textContent = '-';
+  }
+
+  function generateBatchForms() {
+    const barangaySelect = document.getElementById('barangaySelect');
+    const yearSelect = document.getElementById('yearSelect');
+    const barangayCode = barangaySelect.value;
+    const yearCode = yearSelect.value;
+
+    const start = parseInt(document.getElementById('batchStart').value, 10);
+    const end = parseInt(document.getElementById('batchEnd').value, 10);
+
+    if (isNaN(start) || isNaN(end) || start <= 0 || end < start) {
+      showNotification('Please enter a valid range (start <= end, both > 0).');
+      return;
+    }
+
+    loader.classList.add('active');
+
+    setTimeout(() => {
+      let html = '';
+      let index = 0;
+      for (let i = start; i <= end; i++) {
+        index++;
+        const serial = String(i).padStart(5, '0');
+        const controlNo = `SK-Mal-${barangayCode}-${yearCode}-${serial}`;
+        html += generateFormContent(controlNo, index);
+      }
+      formsContainer.innerHTML = html;
+      applyBarangayAndYearToForms();
+      for (let i = start; i <= end; i++) {
+        const serial = String(i).padStart(5, '0');
+        const controlNo = `SK-Mal-${barangayCode}-${yearCode}-${serial}`;
+        generateQRCode(controlNo, `qr-${controlNo}`);
+      }
+      updateStats(end - start + 1);
+      loader.classList.remove('active');
+      showNotification('Forms generated successfully!');
+    }, 50);
+  }
+
+  function applyBarangayAndYearToForms() {
+    const barangaySelect = document.getElementById('barangaySelect');
+    const barangayText = barangaySelect.options[barangaySelect.selectedIndex].text;
+
+    document.querySelectorAll('.barangay-name').forEach(span => {
+      span.textContent = barangayText;
+    });
+  }
+</script>
+</body>
+</html>

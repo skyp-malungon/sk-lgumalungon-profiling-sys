@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SK Youth Profiling System - Training Presentation</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Poppins:wght@500;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #0d47a1;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --text-main: #334155;
+            --text-muted: #64748b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--light);
+            overflow: hidden; /* Hide scrollbars for presentation mode */
+            color: var(--text-main);
+        }
+
+        /* Presentation Container */
+        .presentation-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background: radial-gradient(circle at top right, #e0f2fe 0%, #f8fafc 50%, #f1f5f9 100%);
+        }
+
+        /* Progress Bar */
+        .progress-bar-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            z-index: 1000;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.4s ease-out;
+        }
+
+        /* Slide Core Styles */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem;
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0.95) translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease, visibility 0.6s;
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1) translateY(0);
+            z-index: 10;
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: 'Poppins', sans-serif;
+            color: var(--dark);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            color: var(--primary-dark);
+        }
+
+        p {
+            font-size: 1.5rem;
+            line-height: 1.6;
+            text-align: center;
+            max-width: 900px;
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+        }
+
+        /* Layout Utilities */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 2rem;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 2rem;
+        }
+
+        /* Cards & Elements */
+        .feature-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        .feature-text {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+        }
+
+        /* Lists */
+        .styled-list {
+            list-style: none;
+            text-align: left;
+            font-size: 1.5rem;
+        }
+
+        .styled-list li {
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            border-left: 5px solid var(--primary);
+        }
+
+        .styled-list i {
+            color: var(--secondary);
+            font-size: 2rem;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        /* Process Flow Diagram */
+        .process-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 3rem;
+            position: relative;
+        }
+
+        .process-flow::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 5%;
+            width: 90%;
+            height: 4px;
+            background: #cbd5e1;
+            z-index: 0;
+            transform: translateY(-50%);
+        }
+
+        .process-step {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: var(--light);
+            padding: 1rem;
+        }
+
+        .step-circle {
+            width: 100px;
+            height: 100px;
+            background: white;
+            border: 4px solid var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: var(--primary);
+            box-shadow: 0 10px 20px rgba(26,115,232,0.2);
+            margin-bottom: 1rem;
+        }
+
+        .step-label {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--dark);
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .btn-nav {
+            background: white;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            color: var(--primary);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .btn-nav:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .btn-nav:disabled {
+            background: #e2e8f0;
+            color: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .slide-counter {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            z-index: 1000;
+        }
+
+        /* Badge for highlights */
+        .badge {
+            background: #fef3c7;
+            color: #b45309;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        /* Animations for child elements */
+        .slide.active .fade-up {
+            animation: fadeUp 0.8s ease forwards;
+            opacity: 0;
+        }
+
+        .delay-1 { animation-delay: 0.2s; }
+        .delay-2 { animation-delay: 0.4s; }
+        .delay-3 { animation-delay: 0.6s; }
+        .delay-4 { animation-delay: 0.8s; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="slide-counter" id="slideCounter">1 / 10</div>
+
+    <div class="controls">
+        <button class="btn-nav" id="prevBtn" onclick="prevSlide()" title="Previous Slide (Left Arrow)"><i class="fas fa-chevron-left"></i></button>
+        <button class="btn-nav" id="nextBtn" onclick="nextSlide()" title="Next Slide (Right Arrow/Space)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+
+    <div class="presentation-container">
+
+        <!-- Slide 1: Title -->
+        <div class="slide active">
+            <span class="badge fade-up">Municipality of Malungon</span>
+            <h1 class="fade-up delay-1">SK Youth Profiling System</h1>
+            <p class="fade-up delay-2" style="font-size: 1.8rem; font-weight: 300;">Empowering youth governance through data-driven decisions.</p>
+            <div class="fade-up delay-3" style="font-size: 5rem; color: var(--primary); margin-top: 2rem;">
+                <i class="fas fa-users-viewfinder"></i>
+            </div>
+        </div>
+
+        <!-- Slide 2: Why are we here? -->
+        <div class="slide">
+            <h2>Why do we need this system?</h2>
+            <div class="grid-2">
+                <div class="feature-card fade-up delay-1">
+                    <i class="fas fa-bullseye feature-icon"></i>
+                    <div class="feature-title">Targeted Programs</div>
+                    <div class="feature-text">Stop guessing. We need to know exactly what the youth need (e.g., jobs, education, sports) to allocate the SK budget effectively.</div>
+                </div>
+                <div class="feature-card fade-up delay-2">
+                    <i class="fas fa-database feature-icon"></i>
+                    <div class="feature-title">Centralized Registry</div>
+                    <div class="feature-text">Move away from scattered papers. Maintain a secure, centralized database of all Katipunan ng Kabataan (KK) members.</div>
+                </div>
+                <div class="feature-card fade-up delay-3">
+                    <i class="fas fa-bolt feature-icon text-warning"></i>
+                    <div class="feature-title">Efficiency</div>
+                    <div class="feature-text">Automated age calculation, standardized demographics, and real-time generation of municipal and barangay-level reports.</div>
+                </div>
+                <div class="feature-card fade-up delay-4">
+                    <i class="fas fa-shield-halved feature-icon" style="color: var(--secondary);"></i>
+                    <div class="feature-title">Data Privacy</div>
+                    <div class="feature-text">Compliant with RA 10173 (Data Privacy Act). Secure handling of sensitive youth profiles and demographics.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: The 4-Step Process -->
+        <div class="slide">
+            <h2>The System Workflow</h2>
+            <p>A seamless connection from groundwork to executive dashboards.</p>
+            
+            <div class="process-flow fade-up delay-1">
+                <div class="process-step">
+                    <div class="step-circle"><i class="fas fa-print"></i></div>
+                    <div class="step-label">1. Generate</div>
+                    <div class="feature-text text-center mt-2" style="font-size: 1rem;">QR-Coded Forms</div>
+                </div>
+                <div class="process-step delay-2">
+                    <div class="step-circle" style="border-color: var(--accent); color: var(--accent);"><i class="fas fa-mobile-screen-button"></i></div>
+                    <div class="step-label">2. Collect</div>
+                    <div class="feature-text text-center mt-2" style="font-size: 1rem;">Android App / Paper</div>
+                </div>
+                <div class="process-step delay-3">
+                    <div class="step-circle" style="border-color: var(--secondary); color: var(--secondary);"><i class="fas fa-cloud-arrow-up"></i></div>
+                    <div class="step-label">3. Upload</div>
+                    <div class="feature-text text-center mt-2" style="font-size: 1rem;">CSV to Cloud</div>
+                </div>
+                <div class="process-step delay-4">
+                    <div class="step-circle" style="border-color: var(--dark); color: var(--dark);"><i class="fas fa-chart-pie"></i></div>
+                    <div class="step-label">4. Analyze</div>
+                    <div class="feature-text text-center mt-2" style="font-size: 1rem;">Dashboard & Reports</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Step 1 Generate -->
+        <div class="slide">
+            <span class="badge fade-up">Step 1</span>
+            <h2 class="fade-up delay-1">Form Generator</h2>
+            <p class="fade-up delay-2">We start by generating serialized, trackable physical forms for the enumerators.</p>
+            
+            <ul class="styled-list fade-up delay-3" style="max-width: 800px; margin: 0 auto;">
+                <li><i class="fas fa-qrcode"></i> <strong>Unique QR Codes & Control Numbers</strong> (e.g., SK-Mal-01-25-00001) track every single paper form.</li>
+                <li><i class="fas fa-map-location-dot"></i> <strong>Barangay Specific</strong>: Select the Barangay and Year, and the system customizes the forms instantly.</li>
+                <li><i class="fas fa-layer-group"></i> <strong>Batch Printing</strong>: Generate 50, 100, or 500 forms at once, perfectly formatted for standard legal paper.</li>
+            </ul>
+        </div>
+
+        <!-- Slide 5: Step 2 Collect -->
+        <div class="slide">
+            <span class="badge fade-up">Step 2</span>
+            <h2 class="fade-up delay-1">Data Collection (Groundwork)</h2>
+            <p class="fade-up delay-2">Enumerators head to the field to profile the youth.</p>
+            
+            <div class="grid-2 fade-up delay-3">
+                <div class="feature-card">
+                    <i class="fas fa-clipboard-user feature-icon text-dark"></i>
+                    <div class="feature-title">Paper Profiling</div>
+                    <div class="feature-text text-left">
+                        Using the generated forms, enumerators capture critical data: Education, Employment, Youth Sector, Income, and specifically, <strong>Tribal Affiliation</strong> and <strong>Languages Spoken</strong>.
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <i class="fab fa-android feature-icon" style="color: #3DDC84;"></i>
+                    <div class="feature-title">Android App Encoding</div>
+                    <div class="feature-text text-left">
+                        Data is entered into the customized offline Android App. The app uses strict drop-downs (to prevent typos) and exports a clean <code>.csv</code> file when finished.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Step 3 Upload -->
+        <div class="slide">
+            <span class="badge fade-up">Step 3</span>
+            <h2 class="fade-up delay-1">Cloud Uploader</h2>
+            <p class="fade-up delay-2">Moving the data from the Android device to the Central Database.</p>
+            
+            <ul class="styled-list fade-up delay-3" style="max-width: 900px; margin: 0 auto;">
+                <li><i class="fas fa-file-csv"></i> <strong>Drag & Drop CSV</strong>: Simply upload the file exported from the app (e.g., <code>SK_Survey_Banate.csv</code>).</li>
+                <li><i class="fas fa-microchip"></i> <strong>Auto-Decoding</strong>: The system automatically translates app codes (e.g., "M" &rarr; "Male", "BLA" &rarr; "Blaan") into readable formats.</li>
+                <li><i class="fas fa-receipt text-success"></i> <strong>Digital Receipts</strong>: Generates an upload receipt PDF showing the timestamp, barangay, and total respondents appended.</li>
+            </ul>
+        </div>
+
+        <!-- Slide 7: Step 4 Dashboard -->
+        <div class="slide">
+            <span class="badge fade-up">Step 4</span>
+            <h2 class="fade-up delay-1">Management Dashboard (SKYMS)</h2>
+            <p class="fade-up delay-2">The command center for SK Officials and Local Youth Development Officers.</p>
+            
+            <div class="grid-4 fade-up delay-3">
+                <div class="feature-card" style="padding: 1.5rem;">
+                    <i class="fas fa-filter feature-icon" style="font-size: 2.5rem;"></i>
+                    <div class="feature-title" style="font-size: 1.2rem;">Live Filtering</div>
+                    <div class="feature-text" style="font-size: 0.9rem;">Instantly sort by Barangay, Sex, Tribe, or Eligibility (15-30 vs Over-aged).</div>
+                </div>
+                <div class="feature-card" style="padding: 1.5rem;">
+                    <i class="fas fa-chart-line feature-icon" style="font-size: 2.5rem; color: var(--secondary);"></i>
+                    <div class="feature-title" style="font-size: 1.2rem;">Visual Analytics</div>
+                    <div class="feature-text" style="font-size: 0.9rem;">Auto-generated charts for Employment, Education, and Youth Sector distribution.</div>
+                </div>
+                <div class="feature-card" style="padding: 1.5rem;">
+                    <i class="fas fa-address-book feature-icon" style="font-size: 2.5rem; color: var(--accent);"></i>
+                    <div class="feature-title" style="font-size: 1.2rem;">Youth Registry</div>
+                    <div class="feature-text" style="font-size: 0.9rem;">A searchable master list. Click any name to view their complete individual profile.</div>
+                </div>
+                <div class="feature-card" style="padding: 1.5rem;">
+                    <i class="fas fa-file-pdf feature-icon" style="font-size: 2.5rem; color: #ef4444;"></i>
+                    <div class="feature-title" style="font-size: 1.2rem;">1-Click Reports</div>
+                    <div class="feature-text" style="font-size: 0.9rem;">Generate print-ready Master Lists and Statistical Summaries with official letterheads.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Data Privacy -->
+        <div class="slide">
+            <h2><i class="fas fa-lock text-warning"></i> A Note on Data Privacy</h2>
+            <div class="feature-card fade-up delay-1" style="max-width: 800px; margin: 0 auto; text-align: left; background: #fffbeb; border-color: #fde68a;">
+                <h3 style="text-align: left; color: #b45309; margin-bottom: 1rem;">Republic Act No. 10173 (Data Privacy Act of 2012)</h3>
+                <p style="font-size: 1.2rem; text-align: left; color: #92400e; margin-bottom: 1rem;">
+                    As enumerators and officials, you are handling sensitive personal information (income, civil status, contact details).
+                </p>
+                <ul style="margin-left: 1.5rem; font-size: 1.1rem; color: #92400e;">
+                    <li style="margin-bottom: 0.5rem;">Never share raw data or CSV files outside the official system.</li>
+                    <li style="margin-bottom: 0.5rem;">Ensure respondents sign the Data Privacy Consent block on the paper form.</li>
+                    <li>Data is used <strong>strictly</strong> for youth development planning and policy formulation.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 9: Next Steps for Enumerators -->
+        <div class="slide">
+            <span class="badge fade-up">Your Role</span>
+            <h2 class="fade-up delay-1">Action Plan for Enumerators</h2>
+            
+            <ul class="styled-list fade-up delay-2" style="max-width: 800px; margin: 0 auto;">
+                <li><i class="fas fa-1"></i> <strong>Claim Your Forms</strong>: Get your batch of serialized forms from the SK Secretary.</li>
+                <li><i class="fas fa-2"></i> <strong>Conduct Profiling</strong>: Ensure forms are filled out legibly and completely, especially the consent signature.</li>
+                <li><i class="fas fa-3"></i> <strong>Encode Accurately</strong>: Transfer data carefully to the Android App to ensure our charts and reports are 100% accurate.</li>
+                <li><i class="fas fa-4"></i> <strong>Submit</strong>: Export the CSV and assist in uploading it via the cloud portal.</li>
+            </ul>
+        </div>
+
+        <!-- Slide 10: Conclusion -->
+        <div class="slide">
+            <div class="fade-up" style="font-size: 6rem; color: var(--primary); margin-bottom: 2rem;">
+                <i class="fas fa-hands-holding-circle"></i>
+            </div>
+            <h1 class="fade-up delay-1">Let's Get to Work!</h1>
+            <p class="fade-up delay-2">Better data means better programs for the youth of Malungon.</p>
+            
+            <div class="fade-up delay-3" style="margin-top: 3rem;">
+                <button style="padding: 1rem 2rem; font-size: 1.5rem; background: var(--primary); color: white; border: none; border-radius: 3rem; cursor: pointer; font-weight: 700; box-shadow: 0 10px 20px rgba(26,115,232,0.3);" onclick="currentSlide=0; showSlide(currentSlide);">
+                    <i class="fas fa-rotate-left me-2"></i> Restart Presentation
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progressBar');
+        const slideCounter = document.getElementById('slideCounter');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        
+        let currentSlide = 0;
+        const totalSlides = slides.length;
+
+        function showSlide(index) {
+            // Boundary checks
+            if (index < 0) currentSlide = 0;
+            if (index >= totalSlides) currentSlide = totalSlides - 1;
+
+            // Remove active class from all
+            slides.forEach(slide => slide.classList.remove('active'));
+            
+            // Add active to current
+            slides[currentSlide].classList.add('active');
+
+            // Update UI
+            updateProgress();
+            updateControls();
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                showSlide(currentSlide);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                showSlide(currentSlide);
+            }
+        }
+
+        function updateProgress() {
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = `${progress}%`;
+            slideCounter.textContent = `${currentSlide + 1} / ${totalSlides}`;
+        }
+
+        function updateControls() {
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === totalSlides - 1;
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // Touch Navigation (Swipe)
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const threshold = 50;
+            if (touchStartX - touchEndX > threshold) {
+                nextSlide(); // Swipe Left
+            }
+            if (touchEndX - touchStartX > threshold) {
+                prevSlide(); // Swipe Right
+            }
+        }
+
+        // Initialize first slide
+        showSlide(currentSlide);
+    </script>
+</body>
+</html>

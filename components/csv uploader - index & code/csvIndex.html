@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      }
+
+      body {
+        background-color: #f8fafc;
+        padding: 20px;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .card {
+        width: 100%;
+        max-width: 560px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+      }
+
+      .card-header {
+        background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+        color: white;
+        padding: 24px 32px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 200%;
+        background: rgba(255, 255, 255, 0.05);
+        transform: rotate(30deg);
+      }
+
+      .card-header h3 {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .card-header p {
+        opacity: 0.9;
+        font-size: 15px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .card-body {
+        padding: 32px;
+      }
+
+      .upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 40px 20px;
+        text-align: center;
+        background-color: #f8fafc;
+        margin-bottom: 24px;
+        transition: all 0.3s;
+        cursor: pointer;
+        position: relative;
+      }
+
+      .upload-area:hover {
+        border-color: #1a73e8;
+        background-color: #f1f7ff;
+      }
+
+      .upload-area.dragover {
+        border-color: #1a73e8;
+        background-color: #e8f0fe;
+        transform: scale(1.01);
+      }
+
+      .upload-icon {
+        font-size: 48px;
+        color: #64748b;
+        margin-bottom: 16px;
+        transition: color 0.3s;
+      }
+
+      .upload-area:hover .upload-icon {
+        color: #1a73e8;
+      }
+
+      .upload-text {
+        font-size: 18px;
+        color: #334155;
+        margin-bottom: 8px;
+        font-weight: 500;
+      }
+
+      .upload-subtext {
+        font-size: 14px;
+        color: #64748b;
+        margin-bottom: 20px;
+      }
+
+      .file-input {
+        display: none;
+      }
+
+      .file-info {
+        align-items: center;
+        background-color: #f1f5f9;
+        border-radius: 10px;
+        padding: 16px;
+        margin-top: 16px;
+        display: none;
+      }
+
+      .file-info.show {
+        display: flex;
+      }
+
+      .file-icon {
+        color: #1a73e8;
+        font-size: 24px;
+        margin-right: 12px;
+      }
+
+      .file-details {
+        flex-grow: 1;
+      }
+
+      .file-name {
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 4px;
+      }
+
+      .file-size {
+        font-size: 13px;
+        color: #64748b;
+      }
+
+      .btn-upload {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 4px 12px rgba(26, 115, 232, 0.25);
+      }
+
+      .btn-upload:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(26, 115, 232, 0.3);
+      }
+
+      .btn-upload:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      .btn-upload:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background: #94a3b8;
+        box-shadow: none;
+      }
+
+      .btn-upload .spinner {
+        display: none;
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s linear infinite;
+      }
+
+      .btn-upload.uploading .spinner {
+        display: block;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      .progress-wrapper {
+        margin-top: 16px;
+        display: none;
+      }
+
+      .progress-label-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        color: #64748b;
+        margin-bottom: 6px;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background-color: #e2e8f0;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .progress-bar-inner {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #1a73e8, #0ea5e9);
+        border-radius: inherit;
+        transition: width 0.2s ease-out;
+      }
+
+      .status-container {
+        margin-top: 24px;
+        padding: 16px;
+        border-radius: 10px;
+        background-color: #f8fafc;
+        border-left: 4px solid #cbd5e1;
+        transition: all 0.3s;
+      }
+
+      .status-container.success {
+        background-color: #f0fdf4;
+        border-left-color: #10b981;
+      }
+
+      .status-container.error {
+        background-color: #fef2f2;
+        border-left-color: #ef4444;
+      }
+
+      .status-container.uploading {
+        background-color: #eff6ff;
+        border-left-color: #1a73e8;
+      }
+
+      .status-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .status-message {
+        font-size: 15px;
+        color: #334155;
+        line-height: 1.5;
+      }
+
+      .requirements {
+        background-color: #fefce8;
+        border-radius: 10px;
+        padding: 16px;
+        margin-top: 24px;
+        border-left: 4px solid #f59e0b;
+      }
+
+      .requirements h4 {
+        color: #92400e;
+        font-size: 15px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .requirements ul {
+        padding-left: 20px;
+        color: #854d0e;
+        font-size: 14px;
+      }
+
+      .requirements li {
+        margin-bottom: 6px;
+      }
+
+      .footer {
+        text-align: center;
+        margin-top: 32px;
+        padding-top: 16px;
+        border-top: 1px solid #e2e8f0;
+        color: #64748b;
+        font-size: 13px;
+      }
+
+      /* Modal overlay */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .modal-overlay.show {
+        display: flex;
+        opacity: 1;
+      }
+
+      .receipt-modal {
+        background: white;
+        border-radius: 12px;
+        max-width: 420px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        transform: scale(0.95);
+        transition: transform 0.3s ease;
+      }
+
+      .modal-overlay.show .receipt-modal {
+        transform: scale(1);
+      }
+
+      .receipt-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 24px;
+        text-align: center;
+      }
+
+      .receipt-header h2 {
+        font-size: 20px;
+        margin-bottom: 4px;
+      }
+
+      .receipt-header p {
+        font-size: 13px;
+        opacity: 0.9;
+      }
+
+      .receipt-body {
+        padding: 24px;
+      }
+
+      .receipt-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+      }
+
+      .receipt-row:last-child {
+        border-bottom: none;
+      }
+
+      .receipt-label {
+        color: #64748b;
+        font-weight: 500;
+      }
+
+      .receipt-value {
+        color: #1f2937;
+        font-weight: 600;
+      }
+
+      .receipt-footer {
+        padding: 0 24px 24px;
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn-receipt {
+        flex: 1;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .btn-print {
+        background: #1a73e8;
+        color: white;
+      }
+
+      .btn-print:hover {
+        background: #0d47a1;
+      }
+
+      .btn-download {
+        background: #f0fdf4;
+        color: #10b981;
+        border: 1px solid #10b981;
+      }
+
+      .btn-download:hover {
+        background: #dcfce7;
+      }
+
+      .btn-close {
+        background: #f3f4f6;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+      }
+
+      .btn-close:hover {
+        background: #e5e7eb;
+      }
+
+      @media print {
+        body {
+          background: white;
+        }
+        .card,
+        .modal-overlay,
+        .receipt-footer {
+          display: none;
+        }
+        .receipt-modal {
+          box-shadow: none;
+          max-width: 100%;
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="fas fa-file-import"></i> SK Youth Profiling – CSV Uploader</h3>
+        <p>Upload survey data exported from the Android app to Google Sheets</p>
+      </div>
+
+      <div class="card-body">
+        <div class="upload-area" id="uploadArea">
+          <input type="file" id="fileInput" class="file-input" accept=".csv,text/csv">
+
+          <div class="upload-icon">
+            <i class="fas fa-cloud-upload-alt"></i>
+          </div>
+
+          <div class="upload-text">Choose a CSV file or drag it here</div>
+          <div class="upload-subtext">Select a <b>SK_Survey_*.csv</b> file exported from the Android app</div>
+
+          <button type="button" class="btn-upload" id="browseBtn">
+            <i class="fas fa-folder-open"></i> Browse Files
+          </button>
+        </div>
+
+        <div class="file-info" id="fileInfo">
+          <div class="file-icon">
+            <i class="fas fa-file-csv"></i>
+          </div>
+          <div class="file-details">
+            <div class="file-name" id="fileName">No file selected</div>
+            <div class="file-size" id="fileSize">-</div>
+          </div>
+          <div>
+            <i class="fas fa-check-circle" style="color: #10b981; font-size: 20px;"></i>
+          </div>
+        </div>
+
+        <!-- Upload progress -->
+        <div class="progress-wrapper" id="progressWrapper">
+          <div class="progress-label-row">
+            <span>Uploading & processing</span>
+            <span id="progressPercent">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-bar-inner" id="progressBarInner"></div>
+          </div>
+        </div>
+
+        <button class="btn-upload" id="uploadBtn" disabled>
+          <span class="btn-text">Upload to Google Sheets</span>
+          <span class="spinner"></span>
+        </button>
+
+        <div class="status-container" id="statusContainer">
+          <div class="status-title">
+            <i class="fas fa-info-circle"></i>
+            <span>Status</span>
+          </div>
+          <div class="status-message" id="statusMessage">Ready to upload. Please select a CSV file.</div>
+        </div>
+
+        <div class="requirements">
+          <h4><i class="fas fa-exclamation-circle"></i> File Requirements</h4>
+          <ul>
+            <li>File must be in CSV format (.csv extension)</li>
+            <li>Filename should follow the pattern: <code>SK_Survey_*.csv</code></li>
+            <li>File should be exported directly from the Android app</li>
+          </ul>
+        </div>
+
+        <div class="footer">
+          <p>Google Apps Script • SK Youth Profiling System</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div class="modal-overlay" id="receiptModal">
+      <div class="receipt-modal" id="receiptContent">
+        <div class="receipt-header">
+          <h2><i class="fas fa-receipt"></i> Upload Receipt</h2>
+          <p>SK Youth Profiling System</p>
+        </div>
+
+        <div class="receipt-body">
+          <div class="receipt-row">
+            <span class="receipt-label">Receipt No.:</span>
+            <span class="receipt-value" id="receiptNo">-</span>
+          </div>
+          <div class="receipt-row">
+            <span class="receipt-label">Timestamp:</span>
+            <span class="receipt-value" id="receiptTime">-</span>
+          </div>
+          <div class="receipt-row">
+            <span class="receipt-label">Barangay:</span>
+            <span class="receipt-value" id="receiptBarangay">-</span>
+          </div>
+          <div class="receipt-row">
+            <span class="receipt-label">Total Respondents:</span>
+            <span class="receipt-value" id="receiptTotal">-</span>
+          </div>
+          <div class="receipt-row">
+            <span class="receipt-label">File Uploaded:</span>
+            <span class="receipt-value" id="receiptFile">-</span>
+          </div>
+          <div class="receipt-row">
+            <span class="receipt-label">Appended Rows:</span>
+            <span class="receipt-value" id="receiptRows">-</span>
+          </div>
+          <div class="receipt-row">
+            <span class="receipt-label">Status:</span>
+            <span class="receipt-value" style="color: #10b981;"><i class="fas fa-check-circle"></i> Success</span>
+          </div>
+        </div>
+
+        <div class="receipt-footer">
+          <button class="btn-receipt btn-print" id="btnPrint">
+            <i class="fas fa-print"></i> Print
+          </button>
+          <button class="btn-receipt btn-download" id="btnDownload">
+            <i class="fas fa-download"></i> PDF
+          </button>
+          <button class="btn-receipt btn-close" id="btnCloseReceipt">
+            <i class="fas fa-times"></i> Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const fileInput = document.getElementById('fileInput');
+      const uploadBtn = document.getElementById('uploadBtn');
+      const browseBtn = document.getElementById('browseBtn');
+      const uploadArea = document.getElementById('uploadArea');
+      const fileInfo = document.getElementById('fileInfo');
+      const fileName = document.getElementById('fileName');
+      const fileSize = document.getElementById('fileSize');
+      const statusContainer = document.getElementById('statusContainer');
+      const statusMessage = document.getElementById('statusMessage');
+
+      const progressWrapper = document.getElementById('progressWrapper');
+      const progressBarInner = document.getElementById('progressBarInner');
+      const progressPercent = document.getElementById('progressPercent');
+
+      const receiptModal = document.getElementById('receiptModal');
+      const btnPrint = document.getElementById('btnPrint');
+      const btnDownload = document.getElementById('btnDownload');
+      const btnCloseReceipt = document.getElementById('btnCloseReceipt');
+
+      let fileContent = "";
+      let progressInterval = null;
+      let currentProgress = 0;
+      let uploadedFileName = "";
+
+      browseBtn.addEventListener('click', () => {
+        fileInput.click();
+      });
+
+      uploadArea.addEventListener('click', (e) => {
+        if (e.target === browseBtn || browseBtn.contains(e.target)) return;
+        fileInput.click();
+      });
+
+      uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+      });
+
+      uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+      });
+
+      uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+
+        if (e.dataTransfer.files.length) {
+          fileInput.files = e.dataTransfer.files;
+          handleFileSelection(e.dataTransfer.files[0]);
+        }
+      });
+
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+          handleFileSelection(fileInput.files[0]);
+        }
+      });
+
+      function handleFileSelection(file) {
+        if (!file) {
+          resetUI();
+          return;
+        }
+
+        uploadedFileName = file.name;
+
+        const isValidType = file.type === 'text/csv' || file.name.toLowerCase().endsWith('.csv');
+
+        if (!isValidType) {
+          setStatus('Please select a valid CSV file.', 'error');
+          resetFileInfo();
+          return;
+        }
+
+        const isValidPattern = file.name.startsWith('SK_Survey_') && file.name.toLowerCase().endsWith('.csv');
+
+        if (!isValidPattern) {
+          setStatus('File should follow the pattern: SK_Survey_*.csv', 'error');
+        }
+
+        fileInfo.classList.add('show');
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+
+        const reader = new FileReader();
+        reader.onload = e => {
+          fileContent = e.target.result;
+          uploadBtn.disabled = false;
+
+          if (isValidPattern) {
+            setStatus(`Ready to upload: ${file.name}`, 'success');
+          } else {
+            setStatus(`File loaded but name doesn't match expected pattern`, 'error');
+          }
+        };
+
+        reader.readAsText(file);
+        setStatus('Reading file...', 'uploading');
+      }
+
+      uploadBtn.addEventListener('click', () => {
+        if (!fileContent) {
+          setStatus('No file content to upload.', 'error');
+          return;
+        }
+
+        uploadBtn.disabled = true;
+        uploadBtn.classList.add('uploading');
+        startProgress();
+        setStatus('Uploading and importing data to Google Sheets...', 'uploading');
+
+        google.script.run
+          .withSuccessHandler(result => {
+            completeProgress();
+
+            const barangay = result && result.barangay ? result.barangay : 'Unknown';
+            const total = result && typeof result.totalRespondents !== 'undefined'
+              ? result.totalRespondents
+              : 'N/A';
+            const appended = result && typeof result.appendedRows !== 'undefined'
+              ? result.appendedRows
+              : 'N/A';
+
+            setStatus(`Upload successful for ${barangay}. Total respondents: ${total}.`, 'success');
+            showReceipt({ barangay, totalRespondents: total, appendedRows: appended });
+            uploadBtn.disabled = false;
+            uploadBtn.classList.remove('uploading');
+          })
+          .withFailureHandler(err => {
+            failProgress();
+            setStatus(`Upload failed: ${err.message}`, 'error');
+            uploadBtn.disabled = false;
+            uploadBtn.classList.remove('uploading');
+          })
+          .importCsvText(fileContent);
+      });
+
+      function startProgress() {
+        clearInterval(progressInterval);
+        progressWrapper.style.display = 'block';
+        currentProgress = 0;
+        updateProgress(0);
+
+        progressInterval = setInterval(() => {
+          if (currentProgress < 90) {
+            currentProgress += 2;
+            updateProgress(currentProgress);
+          }
+        }, 200);
+      }
+
+      function completeProgress() {
+        clearInterval(progressInterval);
+        currentProgress = 100;
+        updateProgress(100);
+      }
+
+      function failProgress() {
+        clearInterval(progressInterval);
+        updateProgress(currentProgress);
+      }
+
+      function updateProgress(value) {
+        const clamped = Math.max(0, Math.min(100, value));
+        progressBarInner.style.width = clamped + '%';
+        progressPercent.textContent = clamped + '%';
+      }
+
+      function showReceipt(data) {
+        const receiptNo = 'RCP-' + Date.now();
+        const timestamp = new Date().toLocaleString();
+
+        document.getElementById('receiptNo').textContent = receiptNo;
+        document.getElementById('receiptTime').textContent = timestamp;
+        document.getElementById('receiptBarangay').textContent = data.barangay;
+        document.getElementById('receiptTotal').textContent = data.totalRespondents;
+        document.getElementById('receiptFile').textContent = uploadedFileName;
+        document.getElementById('receiptRows').textContent = data.appendedRows;
+
+        receiptModal.classList.add('show');
+      }
+
+      btnPrint.addEventListener('click', () => {
+        window.print();
+      });
+
+      btnDownload.addEventListener('click', () => {
+        const element = document.getElementById('receiptContent');
+        const opt = {
+          margin: 10,
+          filename: 'SK_Receipt_' + Date.now() + '.pdf',
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2 },
+          jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+        };
+        html2pdf().set(opt).from(element).save();
+      });
+
+      btnCloseReceipt.addEventListener('click', () => {
+        receiptModal.classList.remove('show');
+        resetUI();
+      });
+
+      function setStatus(message, type = '') {
+        statusMessage.textContent = message;
+
+        statusContainer.className = 'status-container';
+        if (type) {
+          statusContainer.classList.add(type);
+        }
+
+        const icon = statusContainer.querySelector('.status-title i');
+        if (type === 'success') {
+          icon.className = 'fas fa-check-circle';
+        } else if (type === 'error') {
+          icon.className = 'fas fa-exclamation-triangle';
+        } else if (type === 'uploading') {
+          icon.className = 'fas fa-sync-alt fa-spin';
+        } else {
+          icon.className = 'fas fa-info-circle';
+        }
+      }
+
+      function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      }
+
+      function resetFileInfo() {
+        fileInfo.classList.remove('show');
+        fileName.textContent = 'No file selected';
+        fileSize.textContent = '-';
+        uploadBtn.disabled = true;
+      }
+
+      function resetUI() {
+        resetFileInfo();
+        progressWrapper.style.display = 'none';
+        updateProgress(0);
+        setStatus('Ready to upload. Please select a CSV file.', '');
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SK Youth Profiling - CSV Transfer Guide</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-light: #eff6ff;
+            --secondary: #10b981;
+            --secondary-light: #ecfdf5;
+            --accent: #f59e0b;
+            --accent-light: #fffbeb;
+            --dark: #0f172a;
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --bg-color: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #0f172a 0%, #3b82f6 100%);
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -50px;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: var(--bg-color);
+            transform: skewY(-3deg);
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: #e0f2fe;
+            font-weight: 300;
+        }
+
+        /* Timeline Container */
+        .container {
+            max-width: 1000px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+        }
+
+        .intro-box {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            margin-bottom: 4rem;
+            border-top: 4px solid var(--secondary);
+        }
+
+        .intro-box p {
+            font-size: 1.1rem;
+            color: var(--text-main);
+        }
+
+        .intro-box strong {
+            color: var(--secondary);
+        }
+
+        /* The Timeline */
+        .timeline {
+            position: relative;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50px;
+            width: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+
+        .step {
+            position: relative;
+            margin-bottom: 4rem;
+            padding-left: 120px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .step.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .step-icon {
+            position: absolute;
+            left: 20px;
+            top: 0;
+            width: 64px;
+            height: 64px;
+            background: white;
+            border: 4px solid var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--primary);
+            box-shadow: 0 0 0 8px var(--bg-color), 0 5px 15px rgba(26,115,232,0.3);
+            z-index: 2;
+        }
+
+        /* Alternating Colors for Steps */
+        .step:nth-child(1) .step-icon { border-color: #3b82f6; color: #3b82f6; box-shadow: 0 0 0 8px var(--bg-color), 0 5px 15px rgba(59,130,246,0.3); }
+        .step:nth-child(2) .step-icon { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 8px var(--bg-color), 0 5px 15px rgba(245,158,11,0.3); }
+        .step:nth-child(3) .step-icon { border-color: #ef4444; color: #ef4444; box-shadow: 0 0 0 8px var(--bg-color), 0 5px 15px rgba(239,68,68,0.3); }
+        .step:nth-child(4) .step-icon { border-color: var(--secondary); color: var(--secondary); box-shadow: 0 0 0 8px var(--bg-color), 0 5px 15px rgba(16,185,129,0.3); }
+
+        .step-content {
+            background: white;
+            border-radius: 1rem;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 250px;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .step-content::before {
+            content: '';
+            position: absolute;
+            top: 24px;
+            left: -10px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            transform: rotate(45deg);
+            border-bottom: 1px solid #e2e8f0;
+            border-left: 1px solid #e2e8f0;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .step-num {
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            background: #f1f5f9;
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+        }
+
+        .step-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .step-desc {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Phone UI Mockup */
+        .mock-phone {
+            width: 100%;
+            height: 380px;
+            background: #1e293b;
+            border-radius: 1.5rem;
+            padding: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .mock-phone-screen {
+            background: #f8fafc;
+            width: 100%;
+            height: 100%;
+            border-radius: 1rem;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .mock-app-header {
+            background: #1a73e8;
+            color: white;
+            padding: 1rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .mock-btn {
+            background: #10b981;
+            color: white;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            margin: auto 1rem 1rem 1rem;
+            box-shadow: 0 4px 6px rgba(16,185,129,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* File Manager Mockup */
+        .mock-folder {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: white;
+        }
+
+        .mock-file {
+            background: #eff6ff;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #bfdbfe;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* Share Menu Mockup */
+        .mock-share-sheet {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            border-radius: 1rem 1rem 0 0;
+            padding: 1.5rem 1rem;
+            box-shadow: 0 -10px 20px rgba(0,0,0,0.1);
+        }
+
+        .share-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .share-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.5rem auto;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        /* Web Browser Mockup */
+        .mock-browser {
+            width: 100%;
+            height: 380px;
+            background: #f1f5f9;
+            border-radius: 0.5rem;
+            border: 1px solid #cbd5e1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mock-browser-top {
+            background: #e2e8f0;
+            padding: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .dot { width: 12px; height: 12px; border-radius: 50%; background: #cbd5e1; }
+        .dot.r { background: #ef4444; }
+        .dot.y { background: #f59e0b; }
+        .dot.g { background: #10b981; }
+
+        .mock-drag-area {
+            margin: 2rem;
+            border: 2px dashed #3b82f6;
+            background: #eff6ff;
+            flex-grow: 1;
+            border-radius: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #3b82f6;
+            text-align: center;
+        }
+
+        .transfer-methods {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        .transfer-methods li {
+            padding: 0.75rem;
+            background: var(--bg-color);
+            margin-bottom: 0.5rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-weight: 500;
+        }
+
+        .transfer-methods i {
+            font-size: 1.25rem;
+        }
+
+        footer {
+            background: var(--dark);
+            color: white;
+            text-align: center;
+            padding: 3rem 2rem;
+            margin-top: 4rem;
+        }
+
+        @media (max-width: 900px) {
+            .step-content {
+                grid-template-columns: 1fr;
+            }
+            .mock-phone, .mock-browser {
+                max-width: 300px;
+                margin: 0 auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .timeline::before { left: 30px; }
+            .step { padding-left: 80px; }
+            .step-icon { left: 6px; width: 48px; height: 48px; font-size: 1.2rem; }
+            .step-content::before { display: none; }
+            h1 { font-size: 2.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-content">
+            <h1>Export & Transfer Guide</h1>
+            <p class="subtitle">How to get the CSV file from your mobile phone into the SK Web System.</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="intro-box">
+            <p><i class="fas fa-mobile-alt text-secondary me-2"></i> <strong>Meet Maria.</strong> Maria is an enumerator who just finished profiling 50 youths using the offline Android App. Watch how she exports the data and transfers it from her phone to the PC.</p>
+        </div>
+
+        <div class="timeline">
+            
+            <!-- Step 1: Export -->
+            <div class="step">
+                <div class="step-icon"><i class="fas fa-file-export"></i></div>
+                <div class="step-content">
+                    <div>
+                        <div class="step-header">
+                            <span class="step-num">Step 1</span>
+                            <h3 class="step-title">Export the CSV File</h3>
+                        </div>
+                        <p class="step-desc">Once Maria has finished encoding all the paper forms into her Android app, she needs to save that data as a single file.</p>
+                        <p class="step-desc">She opens the app, goes to the settings or main menu, and taps the <strong>"Export Data to CSV"</strong> button.</p>
+                    </div>
+                    
+                    <div class="mock-phone">
+                        <div class="mock-phone-screen">
+                            <div class="mock-app-header">
+                                <span><i class="fas fa-bars"></i> SKYP App</span>
+                                <span><i class="fas fa-search"></i></span>
+                            </div>
+                            <div style="padding: 1rem;">
+                                <div style="font-size: 0.8rem; color: #64748b;">Records Encoded</div>
+                                <div style="font-size: 2rem; font-weight: 700; color: #1e293b;">50</div>
+                            </div>
+                            <!-- Mock records -->
+                            <div style="flex-grow: 1; background: #f1f5f9; padding: 0.5rem;">
+                                <div style="background: white; padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.25rem; font-size: 0.8rem;">1. Juan Dela Cruz</div>
+                                <div style="background: white; padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.25rem; font-size: 0.8rem;">2. Anna Reyes</div>
+                            </div>
+                            <div class="mock-btn">
+                                <i class="fas fa-download"></i> Export Data to CSV
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Locate -->
+            <div class="step">
+                <div class="step-icon"><i class="fas fa-folder-open"></i></div>
+                <div class="step-content">
+                    <div>
+                        <div class="step-header">
+                            <span class="step-num">Step 2</span>
+                            <h3 class="step-title">Locate in File Manager</h3>
+                        </div>
+                        <p class="step-desc">The app saves the file to the phone's internal storage. Maria opens her phone's <strong>"My Files"</strong> or <strong>"File Manager"</strong> app.</p>
+                        <p class="step-desc">She navigates to the <strong>Downloads</strong> folder. There, she finds the newly created file named something like <code>SK_Survey_Banate.csv</code>.</p>
+                    </div>
+                    
+                    <div class="mock-phone">
+                        <div class="mock-phone-screen">
+                            <div class="mock-app-header" style="background: #eab308; color: #451a03;">
+                                <span><i class="fas fa-folder"></i> File Manager</span>
+                            </div>
+                            <div class="mock-folder">
+                                <i class="fas fa-arrow-left text-muted"></i>
+                                <span style="font-weight: 600;">Downloads</span>
+                            </div>
+                            <div class="mock-file">
+                                <i class="fas fa-file-csv" style="font-size: 2rem; color: #10b981;"></i>
+                                <div>
+                                    <div style="font-weight: 600; font-size: 0.9rem; color: #1e293b;">SK_Survey_Banate.csv</div>
+                                    <div style="font-size: 0.75rem; color: #64748b;">Today, 10:45 AM • 12 KB</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Transfer -->
+            <div class="step">
+                <div class="step-icon"><i class="fas fa-share-nodes"></i></div>
+                <div class="step-content">
+                    <div>
+                        <div class="step-header">
+                            <span class="step-num">Step 3</span>
+                            <h3 class="step-title">Transfer to Computer</h3>
+                        </div>
+                        <p class="step-desc">Maria long-presses the CSV file and taps <strong>Share</strong>. She needs to get this file to the laptop/PC where the SK Uploader is open.</p>
+                        
+                        <p style="font-weight: 600; margin-top: 1rem;">Recommended Transfer Methods:</p>
+                        <ul class="transfer-methods">
+                            <li><i class="fab fa-usb" style="color: #64748b;"></i> <strong>USB Cable:</strong> Plug the phone into the PC, open "This PC," and copy the file from the Downloads folder. (Most reliable)</li>
+                            <li><i class="fab fa-bluetooth-b" style="color: #3b82f6;"></i> <strong>Bluetooth:</strong> Pair the phone to the laptop and send the file.</li>
+                            <li><i class="fab fa-facebook-messenger" style="color: #a855f7;"></i> <strong>Messenger/Email:</strong> Send the file to yourself, then open Facebook/Gmail on the computer and download it.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mock-phone">
+                        <div class="mock-phone-screen" style="background: #cbd5e1;">
+                            <div class="mock-share-sheet">
+                                <div style="text-align: center; font-weight: 600; margin-bottom: 1rem;">Share 1 file</div>
+                                <div style="font-size: 0.8rem; text-align: center; color: #64748b; margin-bottom: 1rem;">SK_Survey_Banate.csv</div>
+                                
+                                <div class="share-grid">
+                                    <div>
+                                        <div class="share-icon" style="background: #3b82f6;"><i class="fab fa-bluetooth-b"></i></div>
+                                        <div style="font-size: 0.7rem;">Bluetooth</div>
+                                    </div>
+                                    <div>
+                                        <div class="share-icon" style="background: #10b981;"><i class="fas fa-envelope"></i></div>
+                                        <div style="font-size: 0.7rem;">Email</div>
+                                    </div>
+                                    <div>
+                                        <div class="share-icon" style="background: #f59e0b;"><i class="fab fa-google-drive"></i></div>
+                                        <div style="font-size: 0.7rem;">Drive</div>
+                                    </div>
+                                    <div>
+                                        <div class="share-icon" style="background: #a855f7;"><i class="fab fa-facebook-messenger"></i></div>
+                                        <div style="font-size: 0.7rem;">Chats</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Upload -->
+            <div class="step">
+                <div class="step-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <div class="step-content">
+                    <div>
+                        <div class="step-header">
+                            <span class="step-num">Step 4</span>
+                            <h3 class="step-title">Upload to the Web System</h3>
+                        </div>
+                        <p class="step-desc">Now that the file is on the computer, Maria opens the web browser and goes to the <strong>CSV Uploader</strong> link.</p>
+                        <p class="step-desc">She simply drags and drops the <code>SK_Survey_Banate.csv</code> file into the dashed box and clicks <strong>"Upload to Google Sheets"</strong>.</p>
+                        <p class="step-desc" style="color: #10b981; font-weight: 600;"><i class="fas fa-check-circle"></i> Done! The data is now live on the dashboard.</p>
+                    </div>
+                    
+                    <div class="mock-browser">
+                        <div class="mock-browser-top">
+                            <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+                            <div style="background: white; border-radius: 1rem; width: 60%; height: 16px; margin-left: 1rem;"></div>
+                        </div>
+                        <div class="mock-drag-area">
+                            <i class="fas fa-file-csv" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                            <div style="font-weight: 600; font-size: 1.1rem;">Drop CSV file here</div>
+                            <div style="font-size: 0.8rem; margin-top: 0.5rem; background: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; border: 1px solid #bfdbfe;">
+                                <i class="fas fa-file-alt"></i> SK_Survey_Banate.csv
+                            </div>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <div style="background: #3b82f6; color: white; text-align: center; padding: 0.5rem; border-radius: 0.25rem; font-size: 0.9rem; font-weight: 600;">
+                                Upload to Google Sheets
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <footer>
+        <h2><i class="fas fa-satellite-dish text-secondary"></i> Data Successfully Transferred</h2>
+        <p style="opacity: 0.8; margin-top: 1rem;">From the barangay field straight into the municipal database.</p>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const steps = document.querySelectorAll('.step');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, {
+                threshold: 0.2 
+            });
+
+            steps.forEach(step => {
+                observer.observe(step);
+            });
+        });
+    </script>
+</body>
+</html>
