@@ -130,8 +130,15 @@ function parseAndNormalizeCsvText(csvText) {
             r.splice(13, 0, '');
           }
 
-          const rawDob = r[6] || '';
-          const calculatedAge = calculateAgeFromDob(rawDob) || (r[7] ? parseInt(r[7], 10) : null);
+          const rawDob = r[6] ? String(r[6]).trim() : '';
+          const dobAge = calculateAgeFromDob(rawDob);
+          const colAge = (r[7] !== undefined && r[7] !== null && String(r[7]).trim() !== '')
+            ? parseInt(String(r[7]).trim(), 10)
+            : null;
+          const rawAge = dobAge !== null ? dobAge : (Number.isFinite(colAge) ? colAge : null);
+          const calculatedAge = (rawAge !== null && Number.isFinite(rawAge) && rawAge >= 0 && rawAge <= 120)
+            ? Math.floor(rawAge)
+            : null;
           const rawBarangay = (r[2] || '').trim();
           const rawName = (r[3] || '').trim();
 
@@ -145,54 +152,58 @@ function parseAndNormalizeCsvText(csvText) {
             : rawBarangay;
 
           const rawUid = r[43] ? String(r[43]).trim().replace(/[^a-zA-Z0-9_-]/g, '') : '';
+          const cleanStr = (val, maxLen) => {
+            const s = (val === null || val === undefined) ? '' : String(val).trim();
+            return maxLen && s.length > maxLen ? s.slice(0, maxLen) : s;
+          };
 
           const record = {
-            'Timestamp': r[0] || new Date().toISOString(),
-            'FormNo.': r[1] || '',
-            'Barangay': effectiveBarangay,
-            'Full Name': rawName,
-            'Nickname': r[4] || '',
-            'Sex': MALUNGON_MAPS.sex[r[5]] || r[5] || '',
-            'Date of Birth': rawDob,
-            'Age': calculatedAge || '',
+            'Timestamp': cleanStr(r[0], 150) || new Date().toISOString(),
+            'FormNo.': cleanStr(r[1], 150),
+            'Barangay': cleanStr(effectiveBarangay, 100),
+            'Full Name': cleanStr(rawName, 150),
+            'Nickname': cleanStr(r[4], 150),
+            'Sex': cleanStr(MALUNGON_MAPS.sex[r[5]] || r[5], 100),
+            'Date of Birth': cleanStr(rawDob, 150),
+            'Age': calculatedAge !== null ? calculatedAge : cleanStr(r[7], 30),
             'calculatedAge': calculatedAge,
             'ageBracket': getAgeBracketLabel(calculatedAge),
-            'Place of Birth': r[8] || '',
-            'Civil Status': MALUNGON_MAPS.civilStatus[r[9]] || r[9] || '',
-            'Tribe': MALUNGON_MAPS.tribe[r[10]] || r[10] || 'Not Specified',
-            'Citizenship': r[11] || 'Filipino',
-            'Religion': r[12] || '',
-            'Sitio/Purok': r[13] || '',
-            'Complete Address': r[14] || '',
-            'Contact Number': r[15] || '',
-            'Email Address': r[16] || '',
-            'Educational Status': MALUNGON_MAPS.educStatus[r[17]] || r[17] || '',
-            'Highest Educational Attainment': MALUNGON_MAPS.highestEduc[r[18]] || r[18] || '',
-            'School/Institution': r[19] || '',
-            'Course/Strand': r[20] || '',
-            'Employment Status': MALUNGON_MAPS.jobs[r[21]] || r[21] || '',
-            'Nature of Work': MALUNGON_MAPS.natureOfWork[r[22]] || r[22] || '',
-            'Skills/Talents': r[23] || '',
-            'Languages Spoken': expandMultiCodes(r[24], MALUNGON_MAPS.languages),
-            'Member of Youth Organization': r[25] || 'No',
-            'Organizations': r[26] || '',
-            'Leadership Position': r[27] || '',
-            'Volunteer Activities': r[28] || '',
-            'Areas of Interest': expandMultiCodes(r[29], MALUNGON_MAPS.interest),
-            'Youth Sector': expandMultiCodes(r[30], MALUNGON_MAPS.sector),
-            'Total Household Members': r[31] || '',
-            'Household Income': MALUNGON_MAPS.income[r[32]] || r[32] || '',
-            'Internet Access': MALUNGON_MAPS.internetAccess[r[33]] || r[33] || '',
-            'Internet Connection Type': MALUNGON_MAPS.internetType[r[34]] || r[34] || '',
-            'Preferred Announcement Mode': expandMultiCodes(r[35], MALUNGON_MAPS.announce),
-            '5-Year Goals': r[36] || '',
-            'Desired Programs': expandMultiCodes(r[37], MALUNGON_MAPS.program),
-            'Participation Mode': expandMultiCodes(r[38], MALUNGON_MAPS.participation),
-            'Data Consent': r[39] || 'Yes',
-            'Date Accomplished': r[40] || '',
-            'SK Data Collector': r[41] || '',
-            'Date Received': r[42] || '',
-            'uid': rawUid || ('YOUTH_' + crypto.randomUUID().replace(/-/g, ''))
+            'Place of Birth': cleanStr(r[8], 200),
+            'Civil Status': cleanStr(MALUNGON_MAPS.civilStatus[r[9]] || r[9], 100),
+            'Tribe': cleanStr(MALUNGON_MAPS.tribe[r[10]] || r[10], 150) || 'Not Specified',
+            'Citizenship': cleanStr(r[11], 150) || 'Filipino',
+            'Religion': cleanStr(r[12], 150),
+            'Sitio/Purok': cleanStr(r[13], 150),
+            'Complete Address': cleanStr(r[14], 2000),
+            'Contact Number': cleanStr(r[15], 100),
+            'Email Address': cleanStr(r[16], 150),
+            'Educational Status': cleanStr(MALUNGON_MAPS.educStatus[r[17]] || r[17], 150),
+            'Highest Educational Attainment': cleanStr(MALUNGON_MAPS.highestEduc[r[18]] || r[18], 150),
+            'School/Institution': cleanStr(r[19], 250),
+            'Course/Strand': cleanStr(r[20], 200),
+            'Employment Status': cleanStr(MALUNGON_MAPS.jobs[r[21]] || r[21], 150),
+            'Nature of Work': cleanStr(MALUNGON_MAPS.natureOfWork[r[22]] || r[22], 200),
+            'Skills/Talents': cleanStr(r[23], 2000),
+            'Languages Spoken': cleanStr(expandMultiCodes(r[24], MALUNGON_MAPS.languages), 2000),
+            'Member of Youth Organization': cleanStr(r[25], 200) || 'No',
+            'Organizations': cleanStr(r[26], 2000),
+            'Leadership Position': cleanStr(r[27], 2000),
+            'Volunteer Activities': cleanStr(r[28], 2000),
+            'Areas of Interest': cleanStr(expandMultiCodes(r[29], MALUNGON_MAPS.interest), 2000),
+            'Youth Sector': cleanStr(expandMultiCodes(r[30], MALUNGON_MAPS.sector), 2000),
+            'Total Household Members': cleanStr(r[31], 50),
+            'Household Income': cleanStr(MALUNGON_MAPS.income[r[32]] || r[32], 150),
+            'Internet Access': cleanStr(MALUNGON_MAPS.internetAccess[r[33]] || r[33], 100),
+            'Internet Connection Type': cleanStr(MALUNGON_MAPS.internetType[r[34]] || r[34], 150),
+            'Preferred Announcement Mode': cleanStr(expandMultiCodes(r[35], MALUNGON_MAPS.announce), 2000),
+            '5-Year Goals': cleanStr(r[36], 2000),
+            'Desired Programs': cleanStr(expandMultiCodes(r[37], MALUNGON_MAPS.program), 2000),
+            'Participation Mode': cleanStr(expandMultiCodes(r[38], MALUNGON_MAPS.participation), 2000),
+            'Data Consent': cleanStr(r[39], 500) || 'Yes',
+            'Date Accomplished': cleanStr(r[40], 150),
+            'SK Data Collector': cleanStr(r[41], 200),
+            'Date Received': cleanStr(r[42], 150),
+            'uid': rawUid ? rawUid.slice(0, 128) : ('YOUTH_' + crypto.randomUUID().replace(/-/g, ''))
           };
 
           normalizedRecords.push(record);

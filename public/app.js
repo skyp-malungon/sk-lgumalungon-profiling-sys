@@ -224,7 +224,7 @@ async function initializeApp() {
         }
     } catch (err) {
         console.error('[Firestore Error]:', err);
-        Swal.fire('Connection Error', 'Could not fetch data from Cloud Firestore. ' + err.message, 'error');
+        uiAlert({ type: 'error', title: 'Connection Error', text: 'Could not fetch data from Cloud Firestore. ' + err.message });
     }
 }
 
@@ -551,15 +551,15 @@ function renderDashboardStats(stats) {
     const genderSubtext = `Male: ${stats.qualifiedGender?.Male || 0} | Female: ${stats.qualifiedGender?.Female || 0}`;
 
     const cardsHtml = (USER_ROLE === 'Admin') ? [
-        createCard('Total Youth', stats.totalYouth, genderSubtext, 'bi-people-fill', '#2563eb', '#eff6ff'),
-        createCard('Educational Status', inSchoolPercent, `${inSchoolCount} In-School Youths`, 'bi-book-fill', '#10b981', '#f0fdf4'),
-        createCard('Employment', employmentPercent, `${employedCount} out of ${total} Employed`, 'bi-briefcase-fill', '#f59e0b', '#fffbeb'),
-        createCard('Top Brgy', topBrgyPercent, `${escapeHtml(topBarangay.name)} (${topBarangay.count} youths)`, 'bi-award-fill', '#ef4444', '#fef2f2')
+        createCard('Total Youth', stats.totalYouth, genderSubtext, 'bi-people-fill', '#2563eb', 'var(--primary-light)'),
+        createCard('Educational Status', inSchoolPercent, `${inSchoolCount} In-School Youths`, 'bi-book-fill', '#10b981', 'var(--success-soft)'),
+        createCard('Employment', employmentPercent, `${employedCount} out of ${total} Employed`, 'bi-briefcase-fill', '#f59e0b', 'var(--warning-soft)'),
+        createCard('Top Brgy', topBrgyPercent, `${escapeHtml(topBarangay.name)} (${topBarangay.count} youths)`, 'bi-award-fill', '#ef4444', 'var(--danger-soft)')
     ].join('') : [
-        createCard('Total Youth', stats.totalYouth, genderSubtext, 'bi-people-fill', '#2563eb', '#eff6ff'),
-        createCard('Educational Status', inSchoolPercent, `${inSchoolCount} In-School Youths`, 'bi-book-fill', '#10b981', '#f0fdf4'),
-        createCard('Employment', employmentPercent, `${employedCount} out of ${total} Employed`, 'bi-briefcase-fill', '#f59e0b', '#fffbeb'),
-        createCard('Top Sitio/Purok', topSitioPercent, `${escapeHtml(topSitio.name)} (${topSitio.count} youths)`, 'bi-house-heart-fill', '#ef4444', '#fef2f2')
+        createCard('Total Youth', stats.totalYouth, genderSubtext, 'bi-people-fill', '#2563eb', 'var(--primary-light)'),
+        createCard('Educational Status', inSchoolPercent, `${inSchoolCount} In-School Youths`, 'bi-book-fill', '#10b981', 'var(--success-soft)'),
+        createCard('Employment', employmentPercent, `${employedCount} out of ${total} Employed`, 'bi-briefcase-fill', '#f59e0b', 'var(--warning-soft)'),
+        createCard('Top Sitio/Purok', topSitioPercent, `${escapeHtml(topSitio.name)} (${topSitio.count} youths)`, 'bi-house-heart-fill', '#ef4444', 'var(--danger-soft)')
     ].join('');
 
     const statsContainer = document.getElementById('dashboardStats');
@@ -568,20 +568,41 @@ function renderDashboardStats(stats) {
 
 function renderCharts(charts) {
     if (!googleChartsLoaded || !charts) return;
-    const commonOpts = { chartArea: { width: '85%', height: '75%' }, legend: { position: 'bottom', textStyle: { fontSize: 11, color: '#64748b' } }, colors: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'], fontName: 'Inter' };
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const textColor = isDark ? '#cbd5e1' : '#475569';
+    const gridColor = isDark ? '#1f2937' : '#e2e8f0';
+    const commonOpts = {
+        backgroundColor: 'transparent',
+        chartArea: { width: '85%', height: '75%' },
+        legend: { position: 'bottom', textStyle: { fontSize: 11, color: textColor } },
+        hAxis: { textStyle: { color: textColor, fontSize: 11 }, gridlines: { color: gridColor } },
+        vAxis: { textStyle: { color: textColor, fontSize: 11 }, gridlines: { color: gridColor }, baselineColor: gridColor },
+        pieSliceBorderColor: isDark ? '#111827' : '#ffffff',
+        colors: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+        fontName: 'Public Sans'
+    };
 
     const safeArray = (arr, header1, header2) => {
         if (!arr || arr.length === 0) return [[header1, header2], ['None', 0]];
         return [[header1, header2], ...arr];
     };
 
-    new google.visualization.ColumnChart(document.getElementById('barangayChart')).draw(google.visualization.arrayToDataTable(safeArray(charts.barangay, 'Barangay', 'Count')), { ...commonOpts, legend: { position: 'none' }, colors: ['#2563eb'], hAxis: { slantedText: true, slantedTextAngle: 45, textStyle: { fontSize: 10 } } });
+    new google.visualization.ColumnChart(document.getElementById('barangayChart')).draw(
+        google.visualization.arrayToDataTable(safeArray(charts.barangay, 'Barangay', 'Count')),
+        { ...commonOpts, legend: { position: 'none' }, colors: ['#3b82f6'], hAxis: { slantedText: true, slantedTextAngle: 45, textStyle: { fontSize: 10, color: textColor } } }
+    );
     new google.visualization.PieChart(document.getElementById('employmentChart')).draw(google.visualization.arrayToDataTable(safeArray(charts.employment, 'Status', 'Count')), { ...commonOpts, pieHole: 0.4 });
     new google.visualization.PieChart(document.getElementById('educationChart')).draw(google.visualization.arrayToDataTable(safeArray(charts.education, 'Level', 'Count')), commonOpts);
     new google.visualization.ColumnChart(document.getElementById('ageChart')).draw(google.visualization.arrayToDataTable(safeArray(charts.ageBracket, 'Age', 'Count')), { ...commonOpts, legend: { position: 'none' }, colors: ['#8b5cf6'] });
     new google.visualization.PieChart(document.getElementById('tribeChart')).draw(google.visualization.arrayToDataTable(safeArray(charts.tribe, 'Tribe', 'Count')), { ...commonOpts, pieHole: 0.4 });
     new google.visualization.PieChart(document.getElementById('sectorChart')).draw(google.visualization.arrayToDataTable(safeArray(charts.sector, 'Sector', 'Count')), { ...commonOpts, pieHole: 0.4, colors: ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e'] });
 }
+
+window.addEventListener('sk-theme-changed', () => {
+    if (googleChartsLoaded && currentChartData) {
+        renderCharts(currentChartData);
+    }
+});
 
 let resizeTimer;
 window.addEventListener('resize', () => {
@@ -757,7 +778,7 @@ function clearTableSearch() {
 
 function exportToCSV() {
     if (!filteredTableData || filteredTableData.length === 0) {
-        Swal.fire('Info', 'No data to export.', 'info');
+        uiToast('info', 'Nothing to Export', 'No matching youth records found for the current filters.');
         return;
     }
     const columns = ['FormNo.', 'Full Name', 'Sex', 'Date of Birth', 'calculatedAge', 'Barangay', 'Sitio/Purok', 'Tribe', 'Civil Status', 'Contact Number', 'Educational Status', 'Highest Educational Attainment', 'Employment Status', 'Youth Sector', 'Member of Youth Organization'];
@@ -869,7 +890,7 @@ async function saveEditedRecord() {
     }
 
     bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
-    Swal.fire({ title: 'Saving to Cloud Firestore...', didOpen: () => Swal.showLoading() });
+    uiLoading('Saving Changes', 'Updating youth profile in Cloud Firestore...');
 
     try {
         await db.collection('youth_profiles').doc(currentEditData.uid).set(updatedData, { merge: true });
@@ -884,44 +905,45 @@ async function saveEditedRecord() {
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        Swal.fire({ icon: 'success', title: 'Saved!', showConfirmButton: false, timer: 1500 });
+        uiClose();
+        uiToast('success', 'Profile Saved', `${updatedData['Full Name'] || 'Youth profile'} has been updated.`);
         initializeApp();
     } catch (err) {
-        Swal.fire('Error', 'Failed to update record in Firestore: ' + err.message, 'error');
+        uiAlert({ type: 'error', title: 'Update Failed', text: 'Failed to update record in Firestore: ' + err.message });
     }
 }
 
-function confirmDelete(uid) {
+async function confirmDelete(uid) {
     const target = globalData.find(r => r.uid === uid);
-    Swal.fire({
-        title: 'Are you sure?',
-        text: `Permanently delete profile of ${target ? target['Full Name'] : 'this youth'}?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        confirmButtonText: 'Yes, delete it!'
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            Swal.fire({ title: 'Deleting from Firestore...', didOpen: () => Swal.showLoading() });
-            try {
-                await db.collection('youth_profiles').doc(uid).delete();
-
-                await db.collection('audit_logs').add({
-                    action: 'DELETE',
-                    recordName: target ? target['Full Name'] : 'Unknown',
-                    details: 'Record was permanently deleted from Firestore.',
-                    barangay: target ? (target['Barangay'] || 'All') : (USER_BRGY || 'All'),
-                    user: USERNAME,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                Swal.fire('Deleted!', 'The record has been permanently deleted.', 'success');
-                initializeApp();
-            } catch (err) {
-                Swal.fire('Error', 'Could not delete record: ' + err.message, 'error');
-            }
-        }
+    const result = await uiConfirm({
+        type: 'warning',
+        title: 'Delete Youth Profile?',
+        html: `Permanently delete the profile of <strong>${escapeHtml(target ? target['Full Name'] : 'this youth')}</strong>? This action cannot be undone.`,
+        confirmText: 'Yes, Delete Profile',
+        danger: true
     });
+
+    if (result.isConfirmed) {
+        uiLoading('Deleting Profile', 'Removing record from Cloud Firestore...');
+        try {
+            await db.collection('youth_profiles').doc(uid).delete();
+
+            await db.collection('audit_logs').add({
+                action: 'DELETE',
+                recordName: target ? target['Full Name'] : 'Unknown',
+                details: 'Record was permanently deleted from Firestore.',
+                barangay: target ? (target['Barangay'] || 'All') : (USER_BRGY || 'All'),
+                user: USERNAME,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            uiClose();
+            uiToast('success', 'Profile Deleted', 'The record has been permanently removed.');
+            initializeApp();
+        } catch (err) {
+            uiAlert({ type: 'error', title: 'Delete Failed', text: 'Could not delete record: ' + err.message });
+        }
+    }
 }
 
 // --- AUDIT TRAIL LOGS ---
@@ -1002,9 +1024,9 @@ function handleCsvFileSelected(file) {
     const reader = new FileReader();
     reader.onload = async (e) => {
         try {
-            Swal.fire({ title: 'Parsing CSV & Expanding Shortcodes...', didOpen: () => Swal.showLoading() });
+            uiLoading('Parsing CSV File', 'Expanding Malungon shortcodes and validating rows...');
             const records = await parseAndNormalizeCsvText(e.target.result);
-            Swal.close();
+            uiClose();
 
             pendingCsvRecords = records;
             const detectedBrgy = records[0]?.Barangay || 'Unknown';
@@ -1015,7 +1037,7 @@ function handleCsvFileSelected(file) {
             document.getElementById('csvFileInfo').style.display = 'flex';
             document.getElementById('btnStartImport').disabled = false;
         } catch (err) {
-            Swal.fire('Error Parsing CSV', err.message, 'error');
+            uiAlert({ type: 'error', title: 'Error Parsing CSV', text: err.message });
         }
     };
     reader.readAsText(file);
@@ -1028,6 +1050,7 @@ async function startCsvImport() {
     document.getElementById('uploadProgressSection').style.display = 'block';
 
     try {
+        const importCount = pendingCsvRecords.length;
         await uploadRecordsToFirestore(pendingCsvRecords, (processed, total) => {
             const pct = Math.round((processed / total) * 100);
             document.getElementById('uploadProgressBar').style.width = `${pct}%`;
@@ -1035,12 +1058,7 @@ async function startCsvImport() {
         });
 
         bootstrap.Modal.getInstance(document.getElementById('csvModal')).hide();
-        Swal.fire({
-            icon: 'success',
-            title: 'Import Complete!',
-            text: `Successfully imported ${pendingCsvRecords.length} records into Cloud Firestore.`,
-            confirmButtonColor: '#2563eb'
-        });
+        uiToast('success', 'CSV Import Complete', `Successfully imported ${importCount} youth records into Cloud Firestore.`);
 
         pendingCsvRecords = [];
         document.getElementById('csvFileInput').value = '';
@@ -1050,7 +1068,7 @@ async function startCsvImport() {
 
         initializeApp();
     } catch (err) {
-        Swal.fire('Import Error', 'Failed to save to Firestore: ' + err.message, 'error');
+        uiAlert({ type: 'error', title: 'Import Error', text: 'Failed to save to Firestore: ' + err.message });
         btn.disabled = false;
     }
 }
@@ -1084,17 +1102,9 @@ function updateSyncNotification(count) {
         banner.classList.remove('d-none');
     }
 
-    if (!syncToastShown && window.Swal) {
+    if (!syncToastShown && typeof uiToast === 'function') {
         syncToastShown = true;
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'info',
-            title: `${num.toLocaleString()} new web form ${num === 1 ? 'record' : 'records'} ready to sync`,
-            showConfirmButton: false,
-            timer: 4500,
-            timerProgressBar: true
-        });
+        uiToast('info', 'Pending Web Submissions', `${num.toLocaleString()} new web form ${num === 1 ? 'record is' : 'records are'} ready to sync.`, 4500);
     }
 }
 
@@ -1154,62 +1164,61 @@ function normalizeSubmissionForMaster(doc) {
 
 async function triggerWebSync() {
     if (USER_ROLE !== 'Admin') {
-        Swal.fire('Access Denied', 'Only the System Admin can sync web forms.', 'error');
+        uiAlert({ type: 'error', title: 'Access Denied', text: 'Only the System Admin can sync web forms.' });
         return;
     }
 
-    Swal.fire({ title: 'Checking Online Submissions...', didOpen: () => Swal.showLoading() });
+    uiLoading('Checking Online Submissions', 'Querying pending eProfiling registrations...');
 
     try {
         const snap = await db.collection('online_submissions').get();
         if (snap.empty) {
-            Swal.fire('Up to Date', 'No new online self-registrations waiting in the intake queue.', 'info');
+            uiClose();
+            uiToast('info', 'Up to Date', 'No new online self-registrations waiting in the intake queue.');
             return;
         }
 
         const count = snap.size;
-        Swal.fire({
-            title: `Found ${count} Online Submissions`,
-            text: `Do you want to approve and merge these ${count} youth registrations into the Master Database?`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#2563eb',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, Approve All'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                Swal.fire({ title: 'Merging into Master Registry...', didOpen: () => Swal.showLoading() });
-
-                // Chunk into 200 docs (400 ops) per batch to stay under Firestore's 500-op batch limit
-                const docs = snap.docs;
-                const CHUNK_SIZE = 200;
-                for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
-                    const chunk = docs.slice(i, i + CHUNK_SIZE);
-                    const batch = db.batch();
-                    chunk.forEach(doc => {
-                        const masterRef = db.collection('youth_profiles').doc(doc.id);
-                        batch.set(masterRef, normalizeSubmissionForMaster(doc), { merge: true });
-                        batch.delete(doc.ref);
-                    });
-                    await batch.commit();
-                }
-
-                await db.collection('audit_logs').add({
-                    action: 'SYNC',
-                    recordName: 'Web Forms Batch',
-                    details: `Approved ${count} online self-registrations to Master Database.`,
-                    barangay: 'All',
-                    user: USERNAME,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                updateSyncNotification(0);
-                Swal.fire('Success!', `Approved and merged ${count} records into Cloud Firestore.`, 'success');
-                initializeApp();
-            }
+        const result = await uiConfirm({
+            type: 'question',
+            title: `Found ${count} Online Submission${count === 1 ? '' : 's'}`,
+            text: `Approve and merge ${count} youth registration${count === 1 ? '' : 's'} into the Master Database?`,
+            confirmText: 'Yes, Approve All'
         });
+
+        if (result.isConfirmed) {
+            uiLoading('Merging into Master Registry', `Syncing ${count} records to Cloud Firestore...`);
+
+            // Chunk into 200 docs (400 ops) per batch to stay under Firestore's 500-op batch limit
+            const docs = snap.docs;
+            const CHUNK_SIZE = 200;
+            for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
+                const chunk = docs.slice(i, i + CHUNK_SIZE);
+                const batch = db.batch();
+                chunk.forEach(doc => {
+                    const masterRef = db.collection('youth_profiles').doc(doc.id);
+                    batch.set(masterRef, normalizeSubmissionForMaster(doc), { merge: true });
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+            }
+
+            await db.collection('audit_logs').add({
+                action: 'SYNC',
+                recordName: 'Web Forms Batch',
+                details: `Approved ${count} online self-registrations to Master Database.`,
+                barangay: 'All',
+                user: USERNAME,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            uiClose();
+            updateSyncNotification(0);
+            uiToast('success', 'Web Sync Complete', `Approved and merged ${count} record${count === 1 ? '' : 's'} into Cloud Firestore.`);
+            initializeApp();
+        }
     } catch (err) {
-        Swal.fire('Sync Error', err.message, 'error');
+        uiAlert({ type: 'error', title: 'Sync Error', text: err.message });
     }
 }
 
@@ -1323,7 +1332,7 @@ function getSignatureBlock() {
 function printReport() {
     const content = document.getElementById('reportPreviewArea').innerHTML;
     if (!content.includes('print-page')) {
-        Swal.fire('Info', 'Please generate a preview first!', 'info');
+        uiToast('info', 'Preview Required', 'Please generate a report preview before printing.');
         return;
     }
     document.getElementById('printArea').innerHTML = content;
@@ -1616,18 +1625,15 @@ function renderUsersTable(users) {
 async function approveUser(userId, username, barangay) {
     if (USER_ROLE !== 'Admin') return;
 
-    const result = await Swal.fire({
+    const result = await uiConfirm({
+        type: 'success',
         title: 'Approve User Account?',
-        html: `Are you sure you want to approve and activate the account for <strong>${escapeHtml(username)}</strong> (${escapeHtml(barangay ? 'Barangay ' + barangay : 'Admin')})?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#10b981',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes, Approve Account'
+        html: `Approve and activate the account for <strong>${escapeHtml(username)}</strong> (${escapeHtml(barangay ? 'Barangay ' + barangay : 'Admin')})?`,
+        confirmText: 'Yes, Approve Account'
     });
 
     if (result.isConfirmed) {
-        Swal.fire({ title: 'Activating account...', didOpen: () => Swal.showLoading() });
+        uiLoading('Activating Account', `Approving ${username}...`);
         try {
             await db.collection('users').doc(userId).set({
                 status: 'Approved',
@@ -1647,10 +1653,11 @@ async function approveUser(userId, username, barangay) {
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            Swal.fire('Approved!', `Account for ${username} is now active.`, 'success');
+            uiClose();
+            uiToast('success', 'Account Approved', `${username} is now active.`);
             loadUsers();
         } catch (err) {
-            Swal.fire('Error', 'Failed to approve user: ' + err.message, 'error');
+            uiAlert({ type: 'error', title: 'Approval Failed', text: 'Failed to approve user: ' + err.message });
         }
     }
 }
@@ -1658,18 +1665,16 @@ async function approveUser(userId, username, barangay) {
 async function rejectUser(userId, username, barangay) {
     if (USER_ROLE !== 'Admin') return;
 
-    const result = await Swal.fire({
+    const result = await uiConfirm({
+        type: 'warning',
         title: 'Reject Registration?',
         html: `Decline the account registration request for <strong>${escapeHtml(username)}</strong>?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes, Reject'
+        confirmText: 'Yes, Reject',
+        danger: true
     });
 
     if (result.isConfirmed) {
-        Swal.fire({ title: 'Updating status...', didOpen: () => Swal.showLoading() });
+        uiLoading('Updating Status', `Rejecting registration for ${username}...`);
         try {
             await db.collection('users').doc(userId).set({
                 status: 'Rejected',
@@ -1689,10 +1694,11 @@ async function rejectUser(userId, username, barangay) {
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            Swal.fire('Rejected', `Registration for ${username} has been rejected.`, 'info');
+            uiClose();
+            uiToast('info', 'Registration Rejected', `Request for ${username} has been declined.`);
             loadUsers();
         } catch (err) {
-            Swal.fire('Error', 'Failed to reject user: ' + err.message, 'error');
+            uiAlert({ type: 'error', title: 'Action Failed', text: 'Failed to reject user: ' + err.message });
         }
     }
 }
@@ -1703,18 +1709,16 @@ async function toggleUserDeactivate(userId, username, currentStatus) {
     const newStatus = (currentStatus === 'Approved') ? 'Deactivated' : 'Approved';
     const actionLabel = (newStatus === 'Deactivated') ? 'Deactivate' : 'Reactivate';
 
-    const result = await Swal.fire({
+    const result = await uiConfirm({
+        type: newStatus === 'Deactivated' ? 'warning' : 'question',
         title: `${actionLabel} Account?`,
         html: `Are you sure you want to ${actionLabel.toLowerCase()} the account for <strong>${escapeHtml(username)}</strong>?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: newStatus === 'Deactivated' ? '#f59e0b' : '#10b981',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: `Yes, ${actionLabel}`
+        confirmText: `Yes, ${actionLabel}`,
+        danger: newStatus === 'Deactivated'
     });
 
     if (result.isConfirmed) {
-        Swal.fire({ title: 'Updating account...', didOpen: () => Swal.showLoading() });
+        uiLoading('Updating Account', `${actionLabel}ing ${username}...`);
         try {
             await db.collection('users').doc(userId).set({
                 status: newStatus,
@@ -1733,10 +1737,11 @@ async function toggleUserDeactivate(userId, username, currentStatus) {
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            Swal.fire('Success', `Account for ${username} has been ${actionLabel.toLowerCase()}d.`, 'success');
+            uiClose();
+            uiToast('success', `Account ${actionLabel}d`, `${username} has been ${actionLabel.toLowerCase()}d.`);
             loadUsers();
         } catch (err) {
-            Swal.fire('Error', 'Failed to update user: ' + err.message, 'error');
+            uiAlert({ type: 'error', title: 'Update Failed', text: 'Failed to update user: ' + err.message });
         }
     }
 }
@@ -1744,22 +1749,20 @@ async function toggleUserDeactivate(userId, username, currentStatus) {
 async function deleteUserAccount(userId, username) {
     if (USER_ROLE !== 'Admin') return;
     if (userId === CURRENT_UID) {
-        Swal.fire('Action Blocked', 'You cannot delete your own active administrator account.', 'warning');
+        uiAlert({ type: 'warning', title: 'Action Blocked', text: 'You cannot delete your own active administrator account.' });
         return;
     }
 
-    const result = await Swal.fire({
+    const result = await uiConfirm({
+        type: 'warning',
         title: 'Delete Account?',
         html: `Permanently delete user <strong>${escapeHtml(username)}</strong> from Cloud Firestore? This cannot be undone.`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes, Delete Permanently'
+        confirmText: 'Yes, Delete Permanently',
+        danger: true
     });
 
     if (result.isConfirmed) {
-        Swal.fire({ title: 'Deleting user...', didOpen: () => Swal.showLoading() });
+        uiLoading('Deleting Account', `Removing ${username} from Firestore...`);
         try {
             await db.collection('users').doc(userId).delete();
 
@@ -1772,10 +1775,11 @@ async function deleteUserAccount(userId, username) {
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            Swal.fire('Deleted!', `User ${username} has been permanently deleted.`, 'success');
+            uiClose();
+            uiToast('success', 'User Deleted', `${username} has been permanently deleted.`);
             loadUsers();
         } catch (err) {
-            Swal.fire('Error', 'Failed to delete user: ' + err.message, 'error');
+            uiAlert({ type: 'error', title: 'Delete Failed', text: 'Failed to delete user: ' + err.message });
         }
     }
 }

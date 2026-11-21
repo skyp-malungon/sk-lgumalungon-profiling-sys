@@ -13,8 +13,18 @@
     <link rel="icon" href="favicon_SKFED/favicon.ico" />
     <link rel="apple-touch-icon" href="favicon_SKFED/apple-touch-icon.png">
 
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('sk_theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', t);
+                document.documentElement.setAttribute('data-bs-theme', t);
+            } catch (e) {}
+        })();
+    </script>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="ui-alerts.js"></script>
 
     <style>
         :root {
@@ -643,6 +653,80 @@
                 height: 60px;
             }
         }
+
+        /* Login Theme Toggle & Dark Mode */
+        .login-theme-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 1.25rem;
+        }
+
+        [data-theme="dark"] .login-page-container,
+        [data-theme="dark"] .auth-portal-panel {
+            background: #0b1120;
+            color: #f1f5f9;
+        }
+        [data-theme="dark"] .auth-heading h2 {
+            color: #f8fafc;
+        }
+        [data-theme="dark"] .auth-heading p,
+        [data-theme="dark"] .auth-divider {
+            color: #94a3b8;
+        }
+        [data-theme="dark"] .auth-divider::before,
+        [data-theme="dark"] .auth-divider::after {
+            border-bottom-color: #1e293b;
+        }
+        [data-theme="dark"] .auth-tab-nav {
+            background: #111827;
+            border-color: #1e293b;
+        }
+        [data-theme="dark"] .auth-tab-btn {
+            color: #94a3b8;
+        }
+        [data-theme="dark"] .auth-tab-btn:hover {
+            color: #f8fafc;
+        }
+        [data-theme="dark"] .auth-tab-btn.active {
+            background: #1e293b;
+            color: #60a5fa;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+        }
+        [data-theme="dark"] .modern-field-group label {
+            color: #cbd5e1;
+        }
+        [data-theme="dark"] .input-shell {
+            background: #111827;
+            border-color: #1f2937;
+        }
+        [data-theme="dark"] .input-shell input,
+        [data-theme="dark"] .input-shell select {
+            color: #f8fafc;
+        }
+        [data-theme="dark"] .input-shell select option {
+            background: #111827;
+            color: #f8fafc;
+        }
+        [data-theme="dark"] .btn-google-auth {
+            background: #111827;
+            color: #f1f5f9;
+            border-color: #334155;
+        }
+        [data-theme="dark"] .btn-google-auth:hover {
+            background: #1e293b;
+            border-color: #475569;
+            color: #ffffff;
+        }
+        [data-theme="dark"] .admin-approval-notice {
+            background: rgba(37, 99, 235, 0.14);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+        [data-theme="dark"] .admin-approval-notice p {
+            color: #bfdbfe;
+        }
+        [data-theme="dark"] .auth-portal-wrapper .border-top {
+            border-top-color: #1e293b !important;
+        }
     </style>
 
     <!-- Firebase SDK v10 (Compat) -->
@@ -723,6 +807,13 @@
         <!-- RIGHT PANEL: Authentication Portal -->
         <section class="auth-portal-panel" aria-label="Account Authentication">
             <div class="auth-portal-wrapper">
+
+                <div class="login-theme-bar">
+                    <button type="button" id="themeToggleBtn" class="btn-theme-toggle" onclick="toggleTheme()" aria-label="Switch to dark mode" title="Switch to dark mode">
+                        <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
+                        <span class="theme-toggle-label">Dark</span>
+                    </button>
+                </div>
 
                 <!-- Switcher Tabs -->
                 <nav class="auth-tab-nav" role="tablist" aria-label="Select Authentication Mode">
@@ -1005,30 +1096,30 @@
                 return true;
             }
             if (status === 'Pending') {
-                Swal.fire({
-                    icon: 'info',
+                uiAlert({
+                    type: 'info',
                     title: 'Account Pending Approval',
                     html: `<p class="mb-2">Your account (<strong>${escapeHtml(displayIdentity)}</strong>) for <strong>${escapeHtml(userData.barangay ? 'Barangay ' + userData.barangay : 'SK Council')}</strong> has been registered and is currently awaiting approval by the Municipal Admin.</p><p class="text-muted small mb-0">Please coordinate with the SK Federation Office to verify and activate your account.</p>`,
-                    confirmButtonColor: '#2563eb'
+                    confirmText: 'Understood'
                 });
                 return false;
             }
             if (status === 'Rejected') {
-                Swal.fire({
-                    icon: 'error',
+                uiAlert({
+                    type: 'error',
                     title: 'Registration Declined',
                     text: 'This account registration request was declined by the administrator. Please contact the SK Federation Office for details.',
-                    confirmButtonColor: '#ef4444'
+                    confirmText: 'Close'
                 });
                 return false;
             }
-            Swal.fire({
-                icon: 'warning',
+            uiAlert({
+                type: 'warning',
                 title: status === 'Deactivated' ? 'Account Deactivated' : 'Access Not Authorized',
                 text: status === 'Deactivated'
                     ? 'This account has been deactivated. Please contact the Municipal Administrator.'
                     : 'Your account is not approved for dashboard access. Please contact the Municipal Administrator.',
-                confirmButtonColor: '#f59e0b'
+                confirmText: 'Okay'
             });
             return false;
         }
@@ -1079,23 +1170,24 @@
                 ];
                 const barangayOptions = barangays.map(b => `<option value="${b}">${b}</option>`).join('');
 
-                const promptResult = await Swal.fire({
+                const promptResult = await Swal.fire(getSwalBaseConfig({
                     title: 'Complete Your SK Registration',
                     html: `
+                        <div class="sk-swal-badge is-question" aria-hidden="true"><i class="bi bi-google"></i></div>
                         <div class="text-start">
                             <p class="small text-muted mb-3">
                                 Welcome, <strong>${escapeHtml(user.displayName || user.email)}</strong> (${escapeHtml(user.email)})! To link your Google account to your SK Council, please specify your assigned Barangay jurisdiction.
                             </p>
                             <div class="mb-3">
-                                <label class="form-label fw-bold small text-dark">Barangay Jurisdiction <span class="text-danger">*</span></label>
-                                <select id="swalRegBarangay" class="form-select form-select-sm">
+                                <label class="form-label fw-bold small">Barangay Jurisdiction <span class="text-danger">*</span></label>
+                                <select id="swalRegBarangay" class="form-select form-select-sm form-control-modern">
                                     <option value="" disabled selected>-- Select your Barangay --</option>
                                     ${barangayOptions}
                                 </select>
                             </div>
                             <div class="mb-2">
-                                <label class="form-label fw-bold small text-dark">Contact Number</label>
-                                <input type="tel" id="swalRegContact" class="form-control form-control-sm" placeholder="e.g. 0912 345 6789">
+                                <label class="form-label fw-bold small">Contact Number</label>
+                                <input type="tel" id="swalRegContact" class="form-control form-control-sm form-control-modern" placeholder="e.g. 0912 345 6789">
                             </div>
                             <div class="alert alert-info py-2 px-3 small mb-0 mt-3">
                                 <i class="bi bi-shield-lock me-1"></i>
@@ -1106,8 +1198,6 @@
                     showCancelButton: true,
                     confirmButtonText: 'Submit for Admin Approval',
                     cancelButtonText: 'Cancel',
-                    confirmButtonColor: '#2563eb',
-                    cancelButtonColor: '#64748b',
                     focusConfirm: false,
                     allowOutsideClick: false,
                     preConfirm: () => {
@@ -1119,7 +1209,7 @@
                         }
                         return { barangay: brgy, contactNumber: contact };
                     }
-                });
+                }));
 
                 if (!promptResult.isConfirmed) {
                     await auth.signOut();
@@ -1150,23 +1240,22 @@
                 // 5. Immediately sign out to prevent unauthorized session retention
                 await auth.signOut();
 
-                Swal.fire({
-                    icon: 'success',
+                uiAlert({
+                    type: 'success',
                     title: 'Registration Submitted!',
                     html: `Your Google account (<strong>${escapeHtml(user.email)}</strong>) for <strong>Barangay ${escapeHtml(barangay)}</strong> has been registered.<br><br><span class="badge bg-warning text-dark py-2 px-3 fs-6">Status: Pending Admin Approval</span><br><br>The Municipal Admin / SK Federation will review your credentials and approve your account. Once approved, you can sign in with Google directly.`,
-                    confirmButtonText: 'Understood',
-                    confirmButtonColor: '#2563eb'
+                    confirmText: 'Understood'
                 });
 
             } catch (err) {
                 console.error('[Google Auth Error]', err);
                 await auth.signOut().catch(() => {});
                 if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
-                    Swal.fire({
-                        icon: 'error',
+                    uiAlert({
+                        type: 'error',
                         title: 'Google Sign-In Failed',
                         text: err.message || 'An error occurred during Google Sign-In. Please try again.',
-                        confirmButtonColor: '#2563eb'
+                        confirmText: 'Close'
                     });
                 }
             } finally {
@@ -1200,11 +1289,11 @@
                 const docSnap = await db.collection('users').doc(authUser.uid).get();
                 if (!docSnap.exists) {
                     await auth.signOut();
-                    Swal.fire({
-                        icon: 'error',
+                    uiAlert({
+                        type: 'error',
                         title: 'Account Record Not Found',
                         text: 'Your user profile could not be found in Firestore. Please contact the administrator.',
-                        confirmButtonColor: '#2563eb'
+                        confirmText: 'Close'
                     });
                     return;
                 }
@@ -1226,15 +1315,15 @@
                     'auth/invalid-credential',
                     'auth/invalid-email'
                 ].includes(err.code);
-                Swal.fire({
-                    icon: 'error',
+                uiAlert({
+                    type: 'error',
                     title: 'Sign-In Failed',
                     text: isCredErr
                         ? 'Incorrect username/email or password. Please verify and try again.'
                         : (err.code === 'auth/too-many-requests'
                             ? 'Too many failed sign-in attempts. Please wait a few minutes and try again.'
                             : 'Failed to authenticate: ' + err.message),
-                    confirmButtonColor: '#2563eb'
+                    confirmText: 'Try Again'
                 });
             } finally {
                 isAuthFlowActive = false;
@@ -1262,31 +1351,28 @@
             isAuthFlowActive = true;
             try {
                 if (!/^[a-z0-9._-]{3,30}$/.test(username)) {
-                    Swal.fire({
-                        icon: 'warning',
+                    uiAlert({
+                        type: 'warning',
                         title: 'Invalid Username',
-                        text: 'Username must be 3 to 30 characters using only letters, numbers, dots, underscores, or hyphens.',
-                        confirmButtonColor: '#2563eb'
+                        text: 'Username must be 3 to 30 characters using only letters, numbers, dots, underscores, or hyphens.'
                     });
                     return;
                 }
 
                 if (!password || password.length < 8) {
-                    Swal.fire({
-                        icon: 'warning',
+                    uiAlert({
+                        type: 'warning',
                         title: 'Weak Password',
-                        text: 'Password must be at least 8 characters long.',
-                        confirmButtonColor: '#2563eb'
+                        text: 'Password must be at least 8 characters long.'
                     });
                     return;
                 }
 
                 if (!barangay || barangay === 'All' || barangay === 'System Admin') {
-                    Swal.fire({
-                        icon: 'warning',
+                    uiAlert({
+                        type: 'warning',
                         title: 'Invalid Barangay',
-                        text: 'Please select your assigned Barangay.',
-                        confirmButtonColor: '#2563eb'
+                        text: 'Please select your assigned Barangay.'
                     });
                     return;
                 }
@@ -1314,12 +1400,11 @@
 
                 await auth.signOut();
 
-                Swal.fire({
-                    icon: 'success',
+                uiAlert({
+                    type: 'success',
                     title: 'Registration Submitted!',
                     html: `Your account registration for <strong>Barangay ${escapeHtml(barangay)}</strong> has been recorded.<br><br><span class="badge bg-warning text-dark py-2 px-3 fs-6">Status: Pending Admin Approval</span><br><br>The Municipal Admin / SK Federation will review your credentials and approve your account before you can log in.`,
-                    confirmButtonText: 'Proceed to Sign In',
-                    confirmButtonColor: '#2563eb'
+                    confirmText: 'Proceed to Sign In'
                 }).then(() => {
                     showAuthMode('login');
                     document.getElementById('loginUser').value = username;
@@ -1330,14 +1415,17 @@
                 console.error('[Registration Error]', err);
                 await auth.signOut().catch(() => {});
                 if (err.code === 'auth/email-already-in-use') {
-                    Swal.fire({
-                        icon: 'warning',
+                    uiAlert({
+                        type: 'warning',
                         title: 'Username Taken',
-                        text: 'This username is already registered. Please choose another username.',
-                        confirmButtonColor: '#2563eb'
+                        text: 'This username is already registered. Please choose another username.'
                     });
                 } else {
-                    Swal.fire('Error', 'Failed to submit account registration: ' + err.message, 'error');
+                    uiAlert({
+                        type: 'error',
+                        title: 'Registration Error',
+                        text: 'Failed to submit account registration: ' + err.message
+                    });
                 }
             } finally {
                 isAuthFlowActive = false;

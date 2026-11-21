@@ -9,8 +9,9 @@ rules_version = '2';
 // Fields:
 //   - Barangay: string (required, 1-100 chars) - Assigned Barangay
 //   - Full Name: string (required, 1-150 chars) - Youth full name
-//   - Timestamp, Date of Birth, Date Accomplished, Date Received, approvedAt, updatedAt: timestamp or string (optional, <= 100 chars)
-//   - Age: int/float (0-120), string (<= 10 chars), or null (optional)
+//   - Timestamp, Date of Birth, Date Accomplished, Date Received, approvedAt, updatedAt, createdAt, submittedAt: timestamp or string (optional, <= 150 chars)
+//   - createdBy, updatedBy: string or null (optional, <= 150 chars)
+//   - Age: int/float (0-120), string (<= 30 chars), or null (optional)
 //   - calculatedAge: int/float (0-120) or null (optional)
 //   - Total Household Members: int/float (0-100), string (<= 50 chars), or null (optional)
 //   - Multi-select / goals / address strings: string (optional, <= 2000 chars)
@@ -131,7 +132,7 @@ service cloud.firestore {
       return !(key in data) ||
              data[key] == null ||
              data[key] is timestamp ||
-             (data[key] is string && data[key].size() <= 100);
+             (data[key] is string && data[key].size() <= 150);
     }
 
     function isOptionalPhotoUrl(data, key) {
@@ -152,26 +153,26 @@ service cloud.firestore {
     // Shared survey field type & length checks for TitleCase youth profile fields
     function hasValidCommonSurveyFields(data) {
       return isOptionalDateOrString(data, 'Timestamp') &&
-             isOptionalNullableString(data, 'FormNo.', 100) &&
-             isOptionalNullableString(data, 'Nickname', 100) &&
-             isOptionalNullableString(data, 'Sex', 50) &&
+             isOptionalNullableString(data, 'FormNo.', 150) &&
+             isOptionalNullableString(data, 'Nickname', 150) &&
+             isOptionalNullableString(data, 'Sex', 100) &&
              isOptionalDateOrString(data, 'Date of Birth') &&
              (!('Age' in data) ||
               data['Age'] == null ||
-              (data['Age'] is string && data['Age'].size() <= 10) ||
+              (data['Age'] is string && data['Age'].size() <= 30) ||
               isValidNumberRange(data['Age'], 0, 120)) &&
              (!('calculatedAge' in data) ||
               data.calculatedAge == null ||
               isValidNumberRange(data.calculatedAge, 0, 120)) &&
              isOptionalNullableString(data, 'ageBracket', 50) &&
              isOptionalNullableString(data, 'Place of Birth', 200) &&
-             isOptionalNullableString(data, 'Civil Status', 50) &&
-             isOptionalNullableString(data, 'Tribe', 100) &&
-             isOptionalNullableString(data, 'Citizenship', 100) &&
-             isOptionalNullableString(data, 'Religion', 100) &&
+             isOptionalNullableString(data, 'Civil Status', 100) &&
+             isOptionalNullableString(data, 'Tribe', 150) &&
+             isOptionalNullableString(data, 'Citizenship', 150) &&
+             isOptionalNullableString(data, 'Religion', 150) &&
              isOptionalNullableString(data, 'Sitio/Purok', 150) &&
              isOptionalNullableString(data, 'Complete Address', 2000) &&
-             isOptionalNullableString(data, 'Contact Number', 50) &&
+             isOptionalNullableString(data, 'Contact Number', 100) &&
              isOptionalNullableString(data, 'Email Address', 150) &&
              isOptionalNullableString(data, 'Educational Status', 150) &&
              isOptionalNullableString(data, 'Highest Educational Attainment', 150) &&
@@ -181,7 +182,7 @@ service cloud.firestore {
              isOptionalNullableString(data, 'Nature of Work', 200) &&
              isOptionalNullableString(data, 'Skills/Talents', 2000) &&
              isOptionalNullableString(data, 'Languages Spoken', 2000) &&
-             isOptionalNullableString(data, 'Member of Youth Organization', 50) &&
+             isOptionalNullableString(data, 'Member of Youth Organization', 200) &&
              isOptionalNullableString(data, 'Organizations', 2000) &&
              isOptionalNullableString(data, 'Leadership Position', 2000) &&
              isOptionalNullableString(data, 'Volunteer Activities', 2000) &&
@@ -191,16 +192,16 @@ service cloud.firestore {
               data['Total Household Members'] == null ||
               (data['Total Household Members'] is string && data['Total Household Members'].size() <= 50) ||
               isValidNumberRange(data['Total Household Members'], 0, 100)) &&
-             isOptionalNullableString(data, 'Household Income', 100) &&
-             isOptionalNullableString(data, 'Internet Access', 50) &&
-             isOptionalNullableString(data, 'Internet Connection Type', 100) &&
+             isOptionalNullableString(data, 'Household Income', 150) &&
+             isOptionalNullableString(data, 'Internet Access', 100) &&
+             isOptionalNullableString(data, 'Internet Connection Type', 150) &&
              isOptionalNullableString(data, 'Preferred Announcement Mode', 2000) &&
              isOptionalNullableString(data, '5-Year Goals', 2000) &&
              isOptionalNullableString(data, 'Desired Programs', 2000) &&
              isOptionalNullableString(data, 'Participation Mode', 2000) &&
-             isOptionalNullableString(data, 'Data Consent', 50) &&
+             isOptionalNullableString(data, 'Data Consent', 500) &&
              isOptionalDateOrString(data, 'Date Accomplished') &&
-             isOptionalNullableString(data, 'SK Data Collector', 150) &&
+             isOptionalNullableString(data, 'SK Data Collector', 200) &&
              isOptionalDateOrString(data, 'Date Received') &&
              isOptionalNullableString(data, 'uid', 128) &&
              isOptionalDateOrString(data, 'updatedAt');
@@ -220,7 +221,8 @@ service cloud.firestore {
                'Internet Connection Type', 'Preferred Announcement Mode', '5-Year Goals',
                'Desired Programs', 'Participation Mode', 'Data Consent',
                'Date Accomplished', 'SK Data Collector', 'Date Received',
-               'uid', 'approvedAt', 'updatedAt'
+               'uid', 'approvedAt', 'updatedAt',
+               'createdAt', 'submittedAt', 'createdBy', 'updatedBy'
              ]) &&
              'Barangay' in data &&
              data['Barangay'] is string &&
@@ -231,6 +233,10 @@ service cloud.firestore {
              data['Full Name'].size() > 0 &&
              data['Full Name'].size() <= 150 &&
              isOptionalDateOrString(data, 'approvedAt') &&
+             isOptionalDateOrString(data, 'createdAt') &&
+             isOptionalDateOrString(data, 'submittedAt') &&
+             isOptionalNullableString(data, 'createdBy', 150) &&
+             isOptionalNullableString(data, 'updatedBy', 150) &&
              hasValidCommonSurveyFields(data);
     }
 
