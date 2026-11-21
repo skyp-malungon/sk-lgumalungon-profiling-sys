@@ -1126,14 +1126,14 @@ function getOfficialHeader(barangay) {
     const brgyText = barangay ? `BARANGAY ${barangay.toUpperCase()}` : "MUNICIPAL WIDE REPORT";
     return `
         <div class="d-flex justify-content-center align-items-center gap-4 mb-4 border-bottom border-dark border-2 pb-3">
-            <img src="https://drive.google.com/thumbnail?id=1UqcRFlPUFnGarFC7LRfE4gMlz71ZYx6m&sz=s1000" style="width: 80px; height: 80px;">
+            <img src="favicon_LGUMalungon/android-chrome-512x512.png" style="width: 80px; height: 80px; object-fit: contain;" alt="LGU Malungon Seal">
             <div class="text-center text-dark">
                 <div class="small text-uppercase">Republic of the Philippines</div>
                 <div class="small text-uppercase">Province of Sarangani</div>
                 <div class="fw-bold">MUNICIPALITY OF MALUNGON</div>
                 <div class="fw-bold fs-5 mt-1">${escapeHtml(brgyText)}</div>
             </div>
-            <img src="https://drive.google.com/thumbnail?id=1ovjAoz-t8OHyPkAPH37lmEsLmA4aow4C&sz=s1000" style="width: 80px; height: 80px;">
+            <img src="favicon_SKFED/android-chrome-512x512.png" style="width: 80px; height: 80px; object-fit: contain;" alt="SK Federation Malungon Logo">
         </div>
     `;
 }
