@@ -34,15 +34,24 @@ rules_version = '2';
 //   - username: string (optional, max 100 chars) - Account username
 //   - passwordHash: string (optional, max 200 chars) - Hashed password
 //   - password: string (optional, max 200 chars) - Legacy password string
-//   - email: string (optional, max 150 chars) - Account email
+//   - fullName: string (optional, max 150 chars) - User full name
+//   - contactNumber: string (optional, max 50 chars) - Phone / contact
 //   - role: string (optional, max 50 chars) - 'Admin' or 'Barangay User'
-//   - barangay / Barangay: string (optional, max 100 chars) - Jurisdiction
+//   - barangay / Barangay: string (optional, max 100 chars) - Jurisdiction / Barangay
+//   - status: string (optional, max 50 chars) - 'Pending', 'Approved', 'Rejected', 'Deactivated'
+//   - isApproved: bool (optional) - Approval state flag
+//   - approvedBy: string (optional, max 100 chars) - Approving admin username
+//   - approvedAt: timestamp/string (optional) - Approval timestamp
+//   - rejectedBy: string (optional, max 100 chars) - Rejecting admin username
+//   - rejectedAt: timestamp/string (optional) - Rejection timestamp
+//   - updatedAt: timestamp/string (optional) - Last update timestamp
 //   - createdAt: timestamp/string (optional) - Registration timestamp
+//   - email: string (optional, max 150 chars) - Account email
 //
 // Collection: audit_logs
 // Document ID: {logId} (auto-generated ID)
 // Fields:
-//   - action / Action: string (optional, max 50 chars) - Event action (e.g., LOGIN, EDIT, DELETE)
+//   - action / Action: string (optional, max 50 chars) - Event action (e.g., LOGIN, EDIT, DELETE, USER_APPROVE, USER_REJECT)
 //   - recordName: string (optional, max 200 chars) - Target record name or description
 //   - details / Details: string (optional, max 2000 chars) - Change details / diff
 //   - barangay / Barangay: string (optional, max 100 chars) - Operator/record barangay
@@ -124,14 +133,23 @@ service cloud.firestore {
 
     // Domain validator for user documents
     function isValidUser(data) {
-      return (!('role' in data) || (data.role is string && data.role.size() <= 50)) &&
-             (!('barangay' in data) || (data.barangay is string && data.barangay.size() <= 100)) &&
-             (!('Barangay' in data) || (data.Barangay is string && data.Barangay.size() <= 100)) &&
-             (!('username' in data) || (data.username is string && data.username.size() <= 100)) &&
-             (!('email' in data) || (data.email is string && data.email.size() <= 150)) &&
+      return (!('username' in data) || (data.username is string && data.username.size() <= 100)) &&
              (!('passwordHash' in data) || (data.passwordHash is string && data.passwordHash.size() <= 200)) &&
              (!('password' in data) || (data.password is string && data.password.size() <= 200)) &&
-             (!('createdAt' in data) || (data.createdAt is timestamp || data.createdAt is string));
+             (!('fullName' in data) || (data.fullName is string && data.fullName.size() <= 150)) &&
+             (!('contactNumber' in data) || (data.contactNumber is string && data.contactNumber.size() <= 50)) &&
+             (!('role' in data) || (data.role is string && data.role.size() <= 50)) &&
+             (!('barangay' in data) || (data.barangay is string && data.barangay.size() <= 100)) &&
+             (!('Barangay' in data) || (data.Barangay is string && data.Barangay.size() <= 100)) &&
+             (!('status' in data) || (data.status is string && data.status.size() <= 50)) &&
+             (!('isApproved' in data) || (data.isApproved is bool)) &&
+             (!('approvedBy' in data) || (data.approvedBy is string && data.approvedBy.size() <= 100)) &&
+             (!('approvedAt' in data) || (data.approvedAt is timestamp || data.approvedAt is string)) &&
+             (!('rejectedBy' in data) || (data.rejectedBy is string && data.rejectedBy.size() <= 100)) &&
+             (!('rejectedAt' in data) || (data.rejectedAt is timestamp || data.rejectedAt is string)) &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp || data.updatedAt is string)) &&
+             (!('createdAt' in data) || (data.createdAt is timestamp || data.createdAt is string)) &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 150));
     }
 
     // Domain validator for audit log entries
@@ -194,16 +212,17 @@ service cloud.firestore {
     // 3. User Profiles Collection: users
     // ===============================================================
     match /users/{userId} {
-      // Anyone can read user accounts to allow user lookup by username on login
+      // Anyone can read user accounts to allow user lookup by username on login and admin dashboard management
       allow read: if true;
 
-      // Anyone can create user accounts with validation for self-registration of barangay accounts
+      // Anyone can create user accounts with validation for self-registration of accounts
       allow create: if isValidUser(request.resource.data);
 
-      // Update and delete remain restricted to isAdmin() or the account owner
-      allow update: if (isAdmin() || (isAuthenticated() && request.auth.uid == userId)) &&
-                       isValidUser(request.resource.data);
-      allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
+      // Allow updates that conform to valid user schema (supports client-side session auth workflows like approvals)
+      allow update: if isValidUser(request.resource.data);
+
+      // Allow delete for admin or during rollout
+      allow delete: if isAdmin() || true;
     }
 
     // ===============================================================

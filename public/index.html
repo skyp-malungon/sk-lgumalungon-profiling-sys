@@ -84,6 +84,12 @@
                         <i class="bi bi-journal-text" aria-hidden="true"></i>Audit Trail
                     </button>
                 </li>
+                <li class="nav-item" role="presentation" id="tab-users-nav-item" style="display: none;">
+                    <button type="button" class="nav-link" id="tab-users" data-bs-toggle="pill" data-bs-target="#users-view" role="tab" aria-controls="users-view" aria-selected="false" onclick="loadUsers()">
+                        <i class="bi bi-person-gear" aria-hidden="true"></i>User Accounts
+                        <span id="pendingUsersBadge" class="sync-nav-badge d-none" title="Pending account approvals">0</span>
+                    </button>
+                </li>
             </ul>
 
             <div class="external-tools-bar" aria-label="Auxiliary tools">
@@ -409,6 +415,87 @@
                             </thead>
                             <tbody id="logsTableBody">
                                 <tr><td colspan="4" class="text-center py-5 text-muted">Loading logs...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- USER ACCOUNTS & APPROVALS VIEW (Admin Only) -->
+            <div class="tab-pane fade" id="users-view" role="tabpanel" aria-labelledby="tab-users">
+                <div class="card-modern mb-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                        <div>
+                            <h2 class="h5 fw-bold text-dark mb-1">
+                                <i class="bi bi-person-gear text-primary me-2" aria-hidden="true"></i>Account Management &amp; Approvals
+                            </h2>
+                            <span class="text-secondary small">Review, approve, or manage Barangay SK Council and Administrator user accounts.</span>
+                        </div>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <button type="button" class="btn btn-primary-modern" onclick="loadUsers()">
+                                <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh Accounts
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pending Accounts Notice Banner -->
+                    <div id="pendingUsersBanner" class="sync-notice-banner d-none mb-4" role="status" aria-live="polite">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-shield-exclamation fs-5" aria-hidden="true"></i>
+                            <span id="pendingUsersBannerText">There are accounts awaiting approval.</span>
+                        </div>
+                        <button type="button" class="btn-sync-banner" onclick="filterUsersByStatus('Pending')">
+                            <i class="bi bi-funnel" aria-hidden="true"></i> View Pending Only
+                        </button>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-4">
+                            <div class="search-input-wrap">
+                                <i class="bi bi-search search-icon" aria-hidden="true"></i>
+                                <input type="text" id="userSearchInput" class="form-control form-control-modern" placeholder="Search username, name, or barangay..." aria-label="Search users" oninput="filterUsersTable()">
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <select id="userStatusFilter" class="form-select form-control-modern" aria-label="Filter users by status" onchange="filterUsersTable()">
+                                <option value="">All Statuses</option>
+                                <option value="Pending">Pending Approval</option>
+                                <option value="Approved">Approved / Active</option>
+                                <option value="Rejected">Rejected</option>
+                                <option value="Deactivated">Deactivated</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <select id="userRoleFilter" class="form-select form-control-modern" aria-label="Filter users by role" onchange="filterUsersTable()">
+                                <option value="">All Roles</option>
+                                <option value="Admin">System Admin</option>
+                                <option value="Barangay User">Barangay User</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <button type="button" class="btn btn-secondary-modern w-100" onclick="clearUsersFilters()">
+                                <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Reset
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Users Table -->
+                    <div class="table-container">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Full Name &amp; Contact</th>
+                                    <th>Barangay / Territory</th>
+                                    <th>Role</th>
+                                    <th>Registered Date</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr><td colspan="7" class="text-center py-5 text-muted">Loading user accounts...</td></tr>
                             </tbody>
                         </table>
                     </div>

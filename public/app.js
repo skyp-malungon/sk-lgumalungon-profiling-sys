@@ -44,7 +44,9 @@ let globalData = [];
 let filteredData = [];
 let filteredTableData = [];
 let currentPage = 1;
-const rowsPerPage = 10;
+let rowsPerPage = 10;
+let currentSortField = null;
+let currentSortAsc = true;
 let googleChartsLoaded = false;
 let currentReportType = 'masterlist';
 let currentEditData = null;
@@ -136,7 +138,10 @@ async function initializeApp() {
         renderCharts(currentChartData);
         renderTable();
         updateFilterSummary();
-        if (USER_ROLE === 'Admin') checkPendingSync();
+        if (USER_ROLE === 'Admin') {
+            checkPendingSync();
+            checkPendingUsersCount();
+        }
 
         const totalRecordsLabel = document.getElementById('totalRecordsLabel');
         if (totalRecordsLabel) {
@@ -158,7 +163,14 @@ function applyRoleBasedUI() {
         }
     }
 
-    if (USER_ROLE !== 'Admin') {
+    const tabUsersNav = document.getElementById('tab-users-nav-item');
+
+    if (USER_ROLE === 'Admin') {
+        if (tabUsersNav) tabUsersNav.style.display = 'list-item';
+        checkPendingUsersCount();
+    } else {
+        if (tabUsersNav) tabUsersNav.style.display = 'none';
+
         const brgyHeader = document.querySelector('.brand-section p');
         if (brgyHeader) brgyHeader.innerText = `Barangay ${USER_BRGY}, Municipality of Malungon`;
 
@@ -576,15 +588,75 @@ function changePage(page) {
     renderTable();
 }
 
+function changePageSize(newSize) {
+    rowsPerPage = parseInt(newSize, 10) || 10;
+    currentPage = 1;
+    renderTable();
+}
+
+function toggleSort(field) {
+    if (currentSortField === field) {
+        currentSortAsc = !currentSortAsc;
+    } else {
+        currentSortField = field;
+        currentSortAsc = true;
+    }
+
+    filteredTableData.sort((a, b) => {
+        let valA = a[field] !== undefined && a[field] !== null ? a[field] : '';
+        let valB = b[field] !== undefined && b[field] !== null ? b[field] : '';
+
+        // Handle numeric sorting for age and form numbers
+        const numA = Number(valA);
+        const numB = Number(valB);
+        if (!isNaN(numA) && !isNaN(numB) && valA !== '' && valB !== '') {
+            return currentSortAsc ? numA - numB : numB - numA;
+        }
+
+        const comp = String(valA).localeCompare(String(valB), undefined, { numeric: true, sensitivity: 'base' });
+        return currentSortAsc ? comp : -comp;
+    });
+
+    // Update th visual classes and icons
+    document.querySelectorAll('.th-sort-btn').forEach(btn => {
+        const btnField = btn.getAttribute('data-sort');
+        const icon = btn.querySelector('i');
+        if (btnField === field) {
+            btn.classList.add('is-sorted');
+            if (icon) {
+                icon.className = currentSortAsc ? 'bi bi-arrow-up text-primary small' : 'bi bi-arrow-down text-primary small';
+            }
+        } else {
+            btn.classList.remove('is-sorted');
+            if (icon) {
+                icon.className = 'bi bi-arrow-down-up small opacity-50';
+            }
+        }
+    });
+
+    currentPage = 1;
+    renderTable();
+}
+
 function filterTable() {
-    const term = document.getElementById('tableSearch').value.toLowerCase();
+    const term = (document.getElementById('tableSearch')?.value || '').toLowerCase().trim();
     filteredTableData = filteredData.filter(row =>
         (row['Full Name'] && row['Full Name'].toLowerCase().includes(term)) ||
         (row['Barangay'] && row['Barangay'].toLowerCase().includes(term)) ||
-        (row['FormNo.'] && row['FormNo.'].toString().toLowerCase().includes(term))
+        (row['FormNo.'] && row['FormNo.'].toString().toLowerCase().includes(term)) ||
+        (row['Sitio/Purok'] && row['Sitio/Purok'].toLowerCase().includes(term)) ||
+        (row['Tribe'] && row['Tribe'].toLowerCase().includes(term))
     );
     currentPage = 1;
     renderTable();
+}
+
+function clearTableSearch() {
+    const input = document.getElementById('tableSearch');
+    if (input) {
+        input.value = '';
+    }
+    filterTable();
 }
 
 function exportToCSV() {
@@ -757,40 +829,73 @@ function confirmDelete(uid) {
 
 // --- AUDIT TRAIL LOGS ---
 
+let allLogs = [];
+
 async function loadLogs() {
     const tbody = document.getElementById('logsTableBody');
     if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></td></tr>';
 
     try {
-        let query = db.collection('audit_logs').orderBy('timestamp', 'desc').limit(50);
+        let query = db.collection('audit_logs').orderBy('timestamp', 'desc').limit(100);
         if (USER_ROLE !== 'Admin' && USER_BRGY) {
             query = query.where('barangay', '==', USER_BRGY);
         }
 
         const snapshot = await query.get();
-        if (snapshot.empty) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2 opacity-25"></i>No logs found in Firestore</td></tr>';
-            return;
-        }
-
-        let html = '';
+        allLogs = [];
         snapshot.forEach(doc => {
             const log = doc.data();
-            const actionClass = log.action === 'DELETE' ? 'bg-danger text-white' : (log.action === 'CSV_IMPORT' ? 'bg-success text-white' : 'bg-warning text-dark');
-            const dateStr = log.timestamp && log.timestamp.toDate ? log.timestamp.toDate().toLocaleString() : '-';
-
-            html += `<tr>
-                <td class="small text-secondary fw-medium">${dateStr}</td>
-                <td><span class="badge badge-modern ${actionClass}">${escapeHtml(log.action || '-')}</span></td>
-                <td class="fw-semibold text-dark">${escapeHtml(log.recordName || '-')}</td>
-                <td class="text-secondary small">${escapeHtml(log.details || '-')}</td>
-            </tr>`;
+            log.id = doc.id;
+            allLogs.push(log);
         });
-        tbody.innerHTML = html;
+
+        filterLogs();
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-5 text-danger">Failed to load logs from Firestore.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-5 text-danger">Failed to load logs from Firestore: ${escapeHtml(err.message)}</td></tr>`;
     }
+}
+
+function filterLogs() {
+    const tbody = document.getElementById('logsTableBody');
+    if (!tbody) return;
+
+    const searchTerm = (document.getElementById('logSearchInput')?.value || '').toLowerCase().trim();
+    const actionFilter = document.getElementById('logActionFilter')?.value || '';
+
+    const filtered = allLogs.filter(log => {
+        const matchesAction = !actionFilter || log.action === actionFilter;
+        const matchesSearch = !searchTerm ||
+            (log.recordName && String(log.recordName).toLowerCase().includes(searchTerm)) ||
+            (log.details && String(log.details).toLowerCase().includes(searchTerm)) ||
+            (log.user && String(log.user).toLowerCase().includes(searchTerm)) ||
+            (log.action && String(log.action).toLowerCase().includes(searchTerm));
+        return matchesAction && matchesSearch;
+    });
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2 opacity-25"></i>No matching audit logs found</td></tr>';
+        return;
+    }
+
+    let html = '';
+    filtered.forEach(log => {
+        let actionClass = 'bg-secondary text-white';
+        if (log.action === 'DELETE' || log.action === 'USER_DELETE' || log.action === 'USER_REJECT') actionClass = 'bg-danger text-white';
+        else if (log.action === 'CSV_IMPORT' || log.action === 'USER_APPROVE') actionClass = 'bg-success text-white';
+        else if (log.action === 'EDIT' || log.action === 'SYNC') actionClass = 'bg-primary text-white';
+        else if (log.action === 'USER_DEACTIVATE') actionClass = 'bg-warning text-dark';
+
+        const dateStr = log.timestamp && log.timestamp.toDate ? log.timestamp.toDate().toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+
+        html += `<tr>
+            <td class="small text-secondary fw-medium">${escapeHtml(dateStr)}</td>
+            <td><span class="badge badge-modern ${actionClass}">${escapeHtml(log.action || '-')}</span></td>
+            <td><div class="fw-semibold text-dark">${escapeHtml(log.recordName || '-')}</div>${log.user ? `<small class="text-muted">By: ${escapeHtml(log.user)}</small>` : ''}</td>
+            <td class="text-secondary small">${escapeHtml(log.details || '-')}</td>
+        </tr>`;
+    });
+    tbody.innerHTML = html;
 }
 
 // --- DRAG AND DROP CSV UPLOADER ---
@@ -1125,4 +1230,375 @@ function printProfile() {
             }, 500);
         }, 150);
     }, 400);
+}
+
+// ===============================================================
+// USER MANAGEMENT & ACCOUNT APPROVALS (MUNICIPAL ADMIN)
+// ===============================================================
+
+let allUsersList = [];
+
+// Fallback age calculators if csv-parser.js loads after or is delayed
+if (typeof calculateAgeFromDob !== 'function') {
+    window.calculateAgeFromDob = function(dateOfBirth) {
+        if (!dateOfBirth) return null;
+        const birthDate = new Date(dateOfBirth);
+        if (isNaN(birthDate.getTime())) return null;
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+        return age;
+    };
+}
+
+if (typeof getAgeBracketLabel !== 'function') {
+    window.getAgeBracketLabel = function(age) {
+        if (age === null || age === undefined || isNaN(age)) return 'Unknown';
+        if (age < 15) return 'Below 15';
+        if (age >= 15 && age <= 17) return 'Youth (15–17)';
+        if (age >= 18 && age <= 24) return 'Youth (18–24)';
+        if (age >= 25 && age <= 29) return 'Youth (25–29)';
+        return '30+';
+    };
+}
+
+async function checkPendingUsersCount() {
+    if (USER_ROLE !== 'Admin') return;
+    try {
+        const snap = await db.collection('users').where('status', '==', 'Pending').get();
+        const count = snap.size;
+        const badge = document.getElementById('pendingUsersBadge');
+        const banner = document.getElementById('pendingUsersBanner');
+        const bannerText = document.getElementById('pendingUsersBannerText');
+
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.classList.remove('d-none');
+            } else {
+                badge.classList.add('d-none');
+            }
+        }
+
+        if (banner && bannerText) {
+            if (count > 0) {
+                bannerText.innerHTML = `<strong>${count}</strong> account registration ${count === 1 ? 'is' : 'are'} pending your review and approval.`;
+                banner.classList.remove('d-none');
+            } else {
+                banner.classList.add('d-none');
+            }
+        }
+    } catch (err) {
+        console.warn('[Users] Error checking pending users:', err);
+    }
+}
+
+async function loadUsers() {
+    if (USER_ROLE !== 'Admin') return;
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></td></tr>';
+
+    try {
+        const snap = await db.collection('users').get();
+        allUsersList = [];
+        snap.forEach(doc => {
+            const data = doc.data();
+            data.id = doc.id;
+            allUsersList.push(data);
+        });
+
+        // Sort: Pending first, then by createdAt desc
+        allUsersList.sort((a, b) => {
+            const aPending = (a.status === 'Pending') ? 1 : 0;
+            const bPending = (b.status === 'Pending') ? 1 : 0;
+            if (aPending !== bPending) return bPending - aPending;
+
+            const aTime = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+            const bTime = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+            return bTime - aTime;
+        });
+
+        checkPendingUsersCount();
+        filterUsersTable();
+    } catch (err) {
+        console.error('[Users] Load Error:', err);
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger">Failed to load accounts from Firestore: ${escapeHtml(err.message)}</td></tr>`;
+    }
+}
+
+function filterUsersTable() {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
+
+    const searchTerm = (document.getElementById('userSearchInput')?.value || '').toLowerCase().trim();
+    const statusFilter = document.getElementById('userStatusFilter')?.value || '';
+    const roleFilter = document.getElementById('userRoleFilter')?.value || '';
+
+    const filtered = allUsersList.filter(u => {
+        const status = u.status || 'Approved';
+        const role = u.role || 'Barangay User';
+
+        if (statusFilter && status !== statusFilter) return false;
+        if (roleFilter && role !== roleFilter) return false;
+
+        if (searchTerm) {
+            const username = (u.username || '').toLowerCase();
+            const fullName = (u.fullName || '').toLowerCase();
+            const brgy = (u.barangay || '').toLowerCase();
+            const contact = (u.contactNumber || '').toLowerCase();
+            if (!username.includes(searchTerm) && !fullName.includes(searchTerm) && !brgy.includes(searchTerm) && !contact.includes(searchTerm)) {
+                return false;
+            }
+        }
+        return true;
+    });
+
+    renderUsersTable(filtered);
+}
+
+function filterUsersByStatus(status) {
+    const sel = document.getElementById('userStatusFilter');
+    if (sel) sel.value = status;
+    filterUsersTable();
+}
+
+function clearUsersFilters() {
+    const searchInput = document.getElementById('userSearchInput');
+    const statusFilter = document.getElementById('userStatusFilter');
+    const roleFilter = document.getElementById('userRoleFilter');
+    if (searchInput) searchInput.value = '';
+    if (statusFilter) statusFilter.value = '';
+    if (roleFilter) roleFilter.value = '';
+    filterUsersTable();
+}
+
+function renderUsersTable(users) {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
+
+    if (!users || users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted"><i class="bi bi-people fs-1 d-block mb-2 opacity-25"></i>No matching user accounts found.</td></tr>';
+        return;
+    }
+
+    let html = '';
+    users.forEach(u => {
+        const status = u.status || 'Approved';
+        let badgeHtml = '';
+        if (status === 'Pending') {
+            badgeHtml = '<span class="badge bg-warning text-dark py-1 px-2"><i class="bi bi-clock-history me-1"></i>Pending Approval</span>';
+        } else if (status === 'Approved') {
+            badgeHtml = '<span class="badge bg-success py-1 px-2"><i class="bi bi-check-circle me-1"></i>Approved</span>';
+        } else if (status === 'Rejected') {
+            badgeHtml = '<span class="badge bg-danger py-1 px-2"><i class="bi bi-x-circle me-1"></i>Rejected</span>';
+        } else if (status === 'Deactivated') {
+            badgeHtml = '<span class="badge bg-secondary py-1 px-2"><i class="bi bi-slash-circle me-1"></i>Deactivated</span>';
+        }
+
+        const dateStr = u.createdAt && u.createdAt.toDate ? u.createdAt.toDate().toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+        const contactInfo = [u.fullName, u.contactNumber].filter(Boolean).map(escapeHtml).join(' &bull; ') || '<span class="text-muted fst-italic">Not specified</span>';
+
+        let actionsHtml = '<div class="btn-group btn-group-sm">';
+
+        if (status === 'Pending') {
+            actionsHtml += `
+                <button type="button" class="btn btn-sm btn-success" onclick="approveUser('${escapeHtml(u.id)}', '${escapeHtml(u.username)}', '${escapeHtml(u.barangay || '')}')" title="Approve Account">
+                    <i class="bi bi-check-lg me-1"></i>Approve
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="rejectUser('${escapeHtml(u.id)}', '${escapeHtml(u.username)}', '${escapeHtml(u.barangay || '')}')" title="Reject Request">
+                    <i class="bi bi-x-lg me-1"></i>Reject
+                </button>
+            `;
+        } else if (status === 'Approved') {
+            actionsHtml += `
+                <button type="button" class="btn btn-sm btn-light border text-warning" onclick="toggleUserDeactivate('${escapeHtml(u.id)}', '${escapeHtml(u.username)}', 'Approved')" title="Deactivate User">
+                    <i class="bi bi-pause-circle"></i> Deactivate
+                </button>
+                <button type="button" class="btn btn-sm btn-light border text-danger" onclick="deleteUserAccount('${escapeHtml(u.id)}', '${escapeHtml(u.username)}')" title="Delete User">
+                    <i class="bi bi-trash"></i>
+                </button>
+            `;
+        } else if (status === 'Rejected' || status === 'Deactivated') {
+            actionsHtml += `
+                <button type="button" class="btn btn-sm btn-outline-success" onclick="approveUser('${escapeHtml(u.id)}', '${escapeHtml(u.username)}', '${escapeHtml(u.barangay || '')}')" title="Reactivate & Approve">
+                    <i class="bi bi-check2-circle me-1"></i>Reactivate
+                </button>
+                <button type="button" class="btn btn-sm btn-light border text-danger" onclick="deleteUserAccount('${escapeHtml(u.id)}', '${escapeHtml(u.username)}')" title="Delete User">
+                    <i class="bi bi-trash"></i>
+                </button>
+            `;
+        }
+        actionsHtml += '</div>';
+
+        html += `<tr>
+            <td class="fw-bold text-dark font-monospace">${escapeHtml(u.username || '-')}</td>
+            <td class="small">${contactInfo}</td>
+            <td><span class="badge bg-light text-dark border">${escapeHtml(u.barangay || 'All')}</span></td>
+            <td><span class="badge ${u.role === 'Admin' ? 'bg-primary' : 'bg-info bg-opacity-10 text-primary border'}">${escapeHtml(u.role || 'Barangay User')}</span></td>
+            <td class="small text-secondary">${escapeHtml(dateStr)}</td>
+            <td>${badgeHtml}</td>
+            <td class="text-end">${actionsHtml}</td>
+        </tr>`;
+    });
+
+    tbody.innerHTML = html;
+}
+
+async function approveUser(userId, username, barangay) {
+    if (USER_ROLE !== 'Admin') return;
+
+    const result = await Swal.fire({
+        title: 'Approve User Account?',
+        html: `Are you sure you want to approve and activate the account for <strong>${escapeHtml(username)}</strong> (${escapeHtml(barangay ? 'Barangay ' + barangay : 'Admin')})?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, Approve Account'
+    });
+
+    if (result.isConfirmed) {
+        Swal.fire({ title: 'Activating account...', didOpen: () => Swal.showLoading() });
+        try {
+            await db.collection('users').doc(userId).set({
+                status: 'Approved',
+                isApproved: true,
+                approvedBy: USERNAME,
+                approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            await db.collection('audit_logs').add({
+                action: 'USER_APPROVE',
+                recordName: username,
+                details: `Approved account for ${username} (${barangay || 'All'})`,
+                barangay: barangay || 'All',
+                user: USERNAME,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            Swal.fire('Approved!', `Account for ${username} is now active.`, 'success');
+            loadUsers();
+        } catch (err) {
+            Swal.fire('Error', 'Failed to approve user: ' + err.message, 'error');
+        }
+    }
+}
+
+async function rejectUser(userId, username, barangay) {
+    if (USER_ROLE !== 'Admin') return;
+
+    const result = await Swal.fire({
+        title: 'Reject Registration?',
+        html: `Decline the account registration request for <strong>${escapeHtml(username)}</strong>?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, Reject'
+    });
+
+    if (result.isConfirmed) {
+        Swal.fire({ title: 'Updating status...', didOpen: () => Swal.showLoading() });
+        try {
+            await db.collection('users').doc(userId).set({
+                status: 'Rejected',
+                isApproved: false,
+                rejectedBy: USERNAME,
+                rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            await db.collection('audit_logs').add({
+                action: 'USER_REJECT',
+                recordName: username,
+                details: `Rejected registration request for ${username} (${barangay || 'All'})`,
+                barangay: barangay || 'All',
+                user: USERNAME,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            Swal.fire('Rejected', `Registration for ${username} has been rejected.`, 'info');
+            loadUsers();
+        } catch (err) {
+            Swal.fire('Error', 'Failed to reject user: ' + err.message, 'error');
+        }
+    }
+}
+
+async function toggleUserDeactivate(userId, username, currentStatus) {
+    if (USER_ROLE !== 'Admin') return;
+
+    const newStatus = (currentStatus === 'Approved') ? 'Deactivated' : 'Approved';
+    const actionLabel = (newStatus === 'Deactivated') ? 'Deactivate' : 'Reactivate';
+
+    const result = await Swal.fire({
+        title: `${actionLabel} Account?`,
+        html: `Are you sure you want to ${actionLabel.toLowerCase()} the account for <strong>${escapeHtml(username)}</strong>?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: newStatus === 'Deactivated' ? '#f59e0b' : '#10b981',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: `Yes, ${actionLabel}`
+    });
+
+    if (result.isConfirmed) {
+        Swal.fire({ title: 'Updating account...', didOpen: () => Swal.showLoading() });
+        try {
+            await db.collection('users').doc(userId).set({
+                status: newStatus,
+                isApproved: (newStatus === 'Approved'),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            await db.collection('audit_logs').add({
+                action: newStatus === 'Deactivated' ? 'USER_DEACTIVATE' : 'USER_APPROVE',
+                recordName: username,
+                details: `${actionLabel}d account for ${username}`,
+                barangay: 'All',
+                user: USERNAME,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            Swal.fire('Success', `Account for ${username} has been ${actionLabel.toLowerCase()}d.`, 'success');
+            loadUsers();
+        } catch (err) {
+            Swal.fire('Error', 'Failed to update user: ' + err.message, 'error');
+        }
+    }
+}
+
+async function deleteUserAccount(userId, username) {
+    if (USER_ROLE !== 'Admin') return;
+
+    const result = await Swal.fire({
+        title: 'Delete Account?',
+        html: `Permanently delete user <strong>${escapeHtml(username)}</strong> from Cloud Firestore? This cannot be undone.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, Delete Permanently'
+    });
+
+    if (result.isConfirmed) {
+        Swal.fire({ title: 'Deleting user...', didOpen: () => Swal.showLoading() });
+        try {
+            await db.collection('users').doc(userId).delete();
+
+            await db.collection('audit_logs').add({
+                action: 'USER_DELETE',
+                recordName: username,
+                details: `Permanently deleted user account for ${username}`,
+                barangay: 'All',
+                user: USERNAME,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            Swal.fire('Deleted!', `User ${username} has been permanently deleted.`, 'success');
+            loadUsers();
+        } catch (err) {
+            Swal.fire('Error', 'Failed to delete user: ' + err.message, 'error');
+        }
+    }
 }

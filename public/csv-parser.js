@@ -137,10 +137,18 @@ function parseAndNormalizeCsvText(csvText) {
 
           if (!rawName || !rawBarangay) continue;
 
+          const sessionRole = sessionStorage.getItem('sk_user_role') || 'Barangay User';
+          const sessionBrgy = sessionStorage.getItem('sk_user_barangay') || '';
+          const effectiveBarangay = (sessionRole !== 'Admin' && sessionBrgy && sessionBrgy !== 'All')
+            ? sessionBrgy
+            : rawBarangay;
+
+          const rawUid = r[43] ? String(r[43]).trim().replace(/[^a-zA-Z0-9_-]/g, '') : '';
+
           const record = {
             'Timestamp': r[0] || new Date().toISOString(),
             'FormNo.': r[1] || '',
-            'Barangay': rawBarangay,
+            'Barangay': effectiveBarangay,
             'Full Name': rawName,
             'Nickname': r[4] || '',
             'Sex': MALUNGON_MAPS.sex[r[5]] || r[5] || '',
@@ -183,7 +191,7 @@ function parseAndNormalizeCsvText(csvText) {
             'Date Accomplished': r[40] || '',
             'SK Data Collector': r[41] || '',
             'Date Received': r[42] || '',
-            'uid': (r[43] && String(r[43]).trim()) || ('YOUTH_' + crypto.randomUUID().replace(/-/g, ''))
+            'uid': rawUid || ('YOUTH_' + crypto.randomUUID().replace(/-/g, ''))
           };
 
           normalizedRecords.push(record);
@@ -226,7 +234,7 @@ async function uploadRecordsToFirestore(records, onProgress) {
 
   // Record upload in system audit log
   try {
-    const currentUser = sessionStorage.getItem('sk_user_barangay') || 'Admin';
+    const currentUser = sessionStorage.getItem('sk_username') || sessionStorage.getItem('sk_user_barangay') || 'Admin';
     const detectedBrgy = records[0]?.Barangay || 'Various';
     await db.collection('audit_logs').add({
       action: 'CSV_IMPORT',

@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - SK Youth Management System</title>
+    <title>SK Youth Management System - Malungon, Sarangani</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="icon" href="/favicon.ico" />
@@ -16,200 +16,574 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        body {
-            background-color: var(--light);
+        :root {
+            --brand-primary: #2563eb;
+            --brand-primary-dark: #1d4ed8;
+            --brand-gradient: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            --hero-bg: #090e1a;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-soft: #e2e8f0;
+            --surface-card: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            font-family: 'Plus Jakarta Sans', 'Public Sans', sans-serif;
+            background-color: var(--hero-bg);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        /* Full Page Container */
+        .login-page-container {
+            display: flex;
+            min-height: 100vh;
+            width: 100vw;
+            background: #ffffff;
+        }
+
+        /* Left Hero Panel (Branding) */
+        .brand-hero-panel {
+            flex: 1 1 50%;
+            max-width: 50%;
+            min-height: 100vh;
+            position: relative;
+            background: linear-gradient(155deg, #090d16 0%, #0d1b3e 40%, #17326e 75%, #1e40af 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3.5rem 3.75rem;
+            overflow: hidden;
+            color: #ffffff;
+            z-index: 1;
+        }
+
+        /* Ambient Glowing Orbs */
+        .ambient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(85px);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.65;
+        }
+        .orb-1 {
+            width: 440px;
+            height: 440px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.7) 0%, rgba(37, 99, 235, 0) 70%);
+            top: -10%;
+            right: -10%;
+            animation: floatOrb1 16s ease-in-out infinite alternate;
+        }
+        .orb-2 {
+            width: 480px;
+            height: 480px;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.5) 0%, rgba(14, 165, 233, 0) 70%);
+            bottom: -15%;
+            left: -15%;
+            animation: floatOrb2 20s ease-in-out infinite alternate;
+        }
+        .orb-3 {
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, rgba(99, 102, 241, 0) 70%);
+            top: 40%;
+            left: 20%;
+            animation: floatOrb3 18s ease-in-out infinite alternate;
+        }
+
+        @keyframes floatOrb1 {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(-30px, 40px) scale(1.1); }
+            100% { transform: translate(25px, -20px) scale(0.95); }
+        }
+        @keyframes floatOrb2 {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(40px, -35px) scale(1.15); }
+            100% { transform: translate(-20px, 30px) scale(0.9); }
+        }
+        @keyframes floatOrb3 {
+            0% { transform: translate(0, 0) scale(0.9); opacity: 0.4; }
+            50% { transform: translate(-25px, -30px) scale(1.2); opacity: 0.7; }
+            100% { transform: translate(30px, 25px) scale(1); opacity: 0.5; }
+        }
+
+        /* Subtle Geometric Background Pattern */
+        .hero-pattern-overlay {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+            background-size: 28px 28px;
+            pointer-events: none;
+            opacity: 0.4;
+            z-index: 0;
+        }
+
+        /* Hero Content Sections */
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-top-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 1rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            backdrop-filter: blur(12px);
+            border-radius: 999px;
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            letter-spacing: 0.02em;
+            margin-bottom: 2.25rem;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+            animation: fadeInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .hero-logos-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 1.15rem;
+            margin-bottom: 1.85rem;
+            animation: fadeInUp 0.8s 0.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .hero-logo-card {
+            width: 72px;
+            height: 72px;
+            border-radius: 1.25rem;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
+        }
+        .hero-logo-card:hover {
+            transform: translateY(-4px) scale(1.04);
+            box-shadow: 0 16px 32px -4px rgba(37, 99, 235, 0.45);
+        }
+        .hero-logo-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .hero-title {
+            font-size: 2.65rem;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.035em;
+            margin-bottom: 1.15rem;
+            color: #ffffff;
+            animation: fadeInUp 0.8s 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .hero-title .highlight-gradient {
+            background: linear-gradient(135deg, #60a5fa 0%, #38bdf8 50%, #93c5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 1.05rem;
+            line-height: 1.65;
+            color: #cbd5e1;
+            max-width: 520px;
+            margin-bottom: 2.5rem;
+            animation: fadeInUp 0.8s 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        /* Features List with Glassmorphism */
+        .hero-features {
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+            max-width: 500px;
+            animation: fadeInUp 0.8s 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .feature-card {
+            display: flex;
+            align-items: center;
+            gap: 1.1rem;
+            padding: 0.85rem 1.15rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            transition: all 0.25s ease;
+        }
+        .feature-card:hover {
+            background: rgba(255, 255, 255, 0.09);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .feature-icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+            background: rgba(37, 99, 235, 0.3);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            color: #60a5fa;
+        }
+
+        .feature-text h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0 0 0.15rem 0;
+        }
+        .feature-text p {
+            font-size: 0.825rem;
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        .hero-footer {
+            position: relative;
+            z-index: 2;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.825rem;
+            color: #94a3b8;
+            animation: fadeIn 0.8s 0.5s ease both;
+        }
+
+        /* Right Auth Portal Panel */
+        .auth-portal-panel {
+            flex: 1 1 50%;
+            max-width: 50%;
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            justify-content: center;
-            margin: 0;
-            padding: 1.25rem;
-        }
-        .login-wrapper {
-            max-width: 980px;
-            width: 100%;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 1.25rem;
-            box-shadow: var(--shadow-lg);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        @media (min-width: 768px) {
-            .login-wrapper {
-                flex-direction: row;
-                min-height: 580px;
-            }
-        }
-        .intro-side {
-            background: linear-gradient(155deg, #2563eb 0%, #1e3a8a 100%);
-            color: #ffffff;
-            padding: 2.75rem 2.5rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            flex: 1;
-        }
-        .intro-side::before {
-            content: '';
-            position: absolute;
-            top: -35%;
-            right: -35%;
-            width: 95%;
-            height: 170%;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 70%);
-            pointer-events: none;
-        }
-        .intro-side .logos {
-            display: flex;
-            gap: 0.85rem;
-            margin-bottom: 1.5rem;
-            z-index: 1;
-        }
-        .intro-side .logos img {
-            width: 68px;
-            height: 68px;
-            object-fit: contain;
+            padding: 3rem 4rem;
             background: #ffffff;
-            padding: 6px;
-            border-radius: 50%;
-            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.22);
+            position: relative;
+            overflow-y: auto;
         }
-        .intro-title {
-            font-size: 1.9rem;
-            font-weight: 700;
-            letter-spacing: -0.025em;
-            line-height: 1.2;
-            margin-bottom: 0.85rem;
-            z-index: 1;
+
+        .auth-portal-wrapper {
+            width: 100%;
+            max-width: 460px;
+            margin: auto;
+            animation: fadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
-        .intro-subtitle {
-            font-size: 0.975rem;
-            color: #f8fafc;
-            line-height: 1.6;
-            margin-bottom: 1.75rem;
-            z-index: 1;
-        }
-        .feature-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            z-index: 1;
-        }
-        .feature-list li {
-            display: flex;
-            align-items: center;
-            gap: 0.65rem;
-            margin-bottom: 0.7rem;
-            font-size: 0.9rem;
-            color: #eff6ff;
-        }
-        .feature-list li i {
-            color: #fde047;
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-        .form-side {
-            padding: 2.5rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            flex: 1.05;
-        }
-        .auth-switcher {
+
+        /* Modern Mode Switcher */
+        .auth-tab-nav {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            background: var(--surface-subtle);
-            border: 1px solid var(--border);
-            border-radius: 0.65rem;
-            padding: 0.25rem;
-            margin-bottom: 1.75rem;
+            background: #f1f5f9;
+            padding: 0.35rem;
+            border-radius: 0.9rem;
+            border: 1px solid var(--border-soft);
+            margin-bottom: 2rem;
+            position: relative;
         }
-        .auth-switcher button {
+
+        .auth-tab-btn {
             border: none;
             background: transparent;
-            color: var(--secondary);
+            padding: 0.65rem 1rem;
+            border-radius: 0.7rem;
             font-weight: 600;
-            font-size: 0.875rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: 0.45rem;
-            transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
-        }
-        .auth-switcher button.active {
-            background: var(--surface);
-            color: var(--primary-dark);
-            box-shadow: var(--shadow-sm);
-        }
-        .form-header {
-            margin-bottom: 1.4rem;
-        }
-        .form-header h2 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--dark);
-            letter-spacing: -0.02em;
-            margin-bottom: 0.3rem;
-        }
-        .form-header p {
-            color: var(--muted);
             font-size: 0.9rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+        }
+        .auth-tab-btn:hover {
+            color: var(--text-main);
+        }
+        .auth-tab-btn.active {
+            background: #ffffff;
+            color: var(--brand-primary);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+
+        /* Form Headers */
+        .auth-heading {
+            margin-bottom: 1.75rem;
+        }
+        .auth-heading h2 {
+            font-size: 1.85rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--text-main);
+            margin-bottom: 0.4rem;
+        }
+        .auth-heading p {
+            color: var(--text-muted);
+            font-size: 0.925rem;
             margin: 0;
         }
-        .auth-input-group {
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            overflow: hidden;
-            background: var(--surface);
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+        /* Floating Input Groups */
+        .modern-field-group {
+            margin-bottom: 1.25rem;
         }
-        .auth-input-group:focus-within {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-ring);
-        }
-        .auth-input-group .input-group-text {
-            background-color: var(--surface-subtle);
-            border: none;
-            color: var(--muted);
-        }
-        .auth-input-group .form-control-modern {
-            border: none;
-            box-shadow: none !important;
-        }
-        .auth-input-group .btn-eye {
-            border: none;
-            background-color: var(--surface);
-            color: var(--secondary);
-            padding: 0 0.85rem;
-        }
-        .auth-input-group .btn-eye:hover {
-            background-color: var(--surface-subtle);
-            color: var(--dark);
-        }
-        .toggle-link {
-            color: var(--primary);
-            cursor: pointer;
-            text-decoration: none;
+        .modern-field-group label {
+            display: block;
+            font-size: 0.825rem;
             font-weight: 600;
+            color: #334155;
+            margin-bottom: 0.45rem;
+            letter-spacing: 0.01em;
+        }
+
+        .input-shell {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: #ffffff;
+            border: 1.5px solid var(--border-soft);
+            border-radius: 0.85rem;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+        }
+        .input-shell:focus-within {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+            transform: translateY(-1px);
+        }
+
+        .input-shell .field-icon {
+            padding-left: 1rem;
+            padding-right: 0.4rem;
+            color: #94a3b8;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s ease;
+        }
+        .input-shell:focus-within .field-icon {
+            color: var(--brand-primary);
+        }
+
+        .input-shell input,
+        .input-shell select {
+            width: 100%;
+            border: none;
+            outline: none;
+            padding: 0.8rem 1rem 0.8rem 0.6rem;
+            font-size: 0.925rem;
+            font-family: inherit;
+            color: var(--text-main);
+            background: transparent;
+        }
+        .input-shell input::placeholder {
+            color: #94a3b8;
+        }
+
+        .input-shell .btn-eye-toggle {
             background: none;
             border: none;
-            padding: 0;
+            padding: 0 1rem;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 1.05rem;
+            transition: color 0.18s ease;
         }
-        .toggle-link:hover {
-            color: var(--primary-dark);
+        .input-shell .btn-eye-toggle:hover {
+            color: var(--text-main);
+        }
+
+        /* Action Buttons */
+        .btn-brand-submit {
+            width: 100%;
+            background: var(--brand-gradient);
+            color: #ffffff;
+            border: none;
+            border-radius: 0.85rem;
+            padding: 0.85rem 1.25rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.35);
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-brand-submit:hover {
+            box-shadow: 0 12px 24px -4px rgba(37, 99, 235, 0.45);
+            transform: translateY(-2px);
+            color: #ffffff;
+        }
+        .btn-brand-submit:active {
+            transform: translateY(0) scale(0.98);
+        }
+        .btn-brand-submit:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Alert Callouts */
+        .admin-approval-notice {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 0.85rem;
+            padding: 0.85rem 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 1.35rem;
+            animation: fadeIn 0.4s ease both;
+        }
+        .admin-approval-notice i {
+            font-size: 1.25rem;
+            color: var(--brand-primary);
+            flex-shrink: 0;
+            margin-top: 0.05rem;
+        }
+        .admin-approval-notice p {
+            font-size: 0.825rem;
+            color: #1e40af;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Switch Forms Link */
+        .toggle-link-btn {
+            background: none;
+            border: none;
+            color: var(--brand-primary);
+            font-weight: 700;
+            padding: 0;
+            cursor: pointer;
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+        .toggle-link-btn:hover {
+            color: var(--brand-primary-dark);
             text-decoration: underline;
         }
-        @media (max-width: 767.98px) {
-            .intro-side, .form-side {
-                padding: 1.75rem 1.5rem;
+
+        /* Animated Section Transition */
+        .auth-view-pane {
+            animation: formSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes formSlideUp {
+            0% {
+                opacity: 0;
+                transform: translateY(14px);
             }
-            .intro-title {
-                font-size: 1.55rem;
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            0% {
+                opacity: 0;
+                transform: translateY(-16px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 991.98px) {
+            .login-page-container {
+                flex-direction: column;
+            }
+            .brand-hero-panel {
+                flex: none;
+                max-width: 100%;
+                min-height: auto;
+                padding: 2.75rem 2rem;
+            }
+            .hero-title {
+                font-size: 2.1rem;
+            }
+            .hero-subtitle {
+                font-size: 0.95rem;
+                margin-bottom: 1.75rem;
+            }
+            .hero-features {
+                gap: 0.75rem;
+            }
+            .hero-footer {
+                display: none;
+            }
+            .auth-portal-panel {
+                flex: none;
+                max-width: 100%;
+                min-height: auto;
+                padding: 2.5rem 1.75rem 3.5rem;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .brand-hero-panel {
+                padding: 2.25rem 1.5rem;
+            }
+            .hero-title {
+                font-size: 1.85rem;
+            }
+            .auth-portal-panel {
+                padding: 2rem 1.25rem 3rem;
+            }
+            .hero-logo-card {
+                width: 60px;
+                height: 60px;
             }
         }
     </style>
+
     <!-- Firebase SDK v10 (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -218,145 +592,278 @@
 </head>
 <body>
 
-    <main class="login-wrapper">
-        <section class="intro-side" aria-label="System overview">
-            <div class="logos">
-                <img src="https://drive.google.com/thumbnail?id=1UqcRFlPUFnGarFC7LRfE4gMlz71ZYx6m&sz=s1000" width="68" height="68" alt="LGU Malungon Seal">
-                <img src="https://drive.google.com/thumbnail?id=1ovjAoz-t8OHyPkAPH37lmEsLmA4aow4C&sz=s1000" width="68" height="68" alt="SK Federation Malungon Logo">
+    <main class="login-page-container">
+        <!-- LEFT PANEL: Hero, Municipal Branding, Live Lighting Animations -->
+        <section class="brand-hero-panel" aria-label="Municipality of Malungon SK Overview">
+            <div class="ambient-orb orb-1"></div>
+            <div class="ambient-orb orb-2"></div>
+            <div class="ambient-orb orb-3"></div>
+            <div class="hero-pattern-overlay"></div>
+
+            <div class="hero-content">
+                <div class="hero-top-badge">
+                    <i class="bi bi-geo-alt-fill text-warning" aria-hidden="true"></i>
+                    <span>Municipality of Malungon &bull; Province of Sarangani</span>
+                </div>
+
+                <div class="hero-logos-wrapper">
+                    <div class="hero-logo-card" title="Municipality of Malungon Seal">
+                        <img src="https://drive.google.com/thumbnail?id=1UqcRFlPUFnGarFC7LRfE4gMlz71ZYx6m&sz=s1000" alt="LGU Malungon Seal">
+                    </div>
+                    <div class="hero-logo-card" title="SK Federation Malungon">
+                        <img src="https://drive.google.com/thumbnail?id=1ovjAoz-t8OHyPkAPH37lmEsLmA4aow4C&sz=s1000" alt="SK Federation Malungon Logo">
+                    </div>
+                </div>
+
+                <h1 class="hero-title">
+                    SK Youth <span class="highlight-gradient">Profiling System</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Empowering the 31 Barangays of Malungon through centralized, data-driven youth governance, real-time demographic analytics, and verified SK Council administration.
+                </p>
+
+                <div class="hero-features">
+                    <div class="feature-card">
+                        <div class="feature-icon-box">
+                            <i class="bi bi-people-fill" aria-hidden="true"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Centralized Master Registry</h3>
+                            <p>Unified demographic profiling across all 31 barangays</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon-box">
+                            <i class="bi bi-pie-chart-fill" aria-hidden="true"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Real-Time Demographic Insights</h3>
+                            <p>Dynamic KPI monitoring, age brackets, and education metrics</p>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon-box">
+                            <i class="bi bi-shield-check" aria-hidden="true"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Verified Council Governance</h3>
+                            <p>Admin-approved accounts with tamper-evident audit trails</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <h1 class="intro-title">SK Youth Profiling System</h1>
-            <p class="intro-subtitle">
-                Empowering the Municipality of Malungon, Sarangani Province through a centralized, data-driven approach to youth governance and development.
-            </p>
-            <ul class="feature-list">
-                <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Comprehensive Youth Registry</span></li>
-                <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Real-time Demographic Analytics</span></li>
-                <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Automated Masterlist &amp; Reports</span></li>
-                <li><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span>Secure Audit Trails</span></li>
-            </ul>
+
+            <div class="hero-footer">
+                <span>Tatak Malungon: Serbisyong May Malasakit sa Kabataan</span>
+                <span class="badge bg-light text-dark fw-bold px-2 py-1">Sarangani Province</span>
+            </div>
         </section>
 
-        <section class="form-side" aria-label="Account authentication">
-            <div class="auth-switcher" role="tablist" aria-label="Authentication mode">
-                <button type="button" id="switchLoginBtn" class="active" role="tab" aria-selected="true" onclick="showAuthMode('login')">Sign In</button>
-                <button type="button" id="switchRegBtn" role="tab" aria-selected="false" onclick="showAuthMode('register')">Create Account</button>
-            </div>
+        <!-- RIGHT PANEL: Authentication Portal -->
+        <section class="auth-portal-panel" aria-label="Account Authentication">
+            <div class="auth-portal-wrapper">
 
-            <!-- LOGIN FORM -->
-            <div id="loginSection">
-                <div class="form-header">
-                    <h2>Welcome Back</h2>
-                    <p>Enter your credentials to access the dashboard.</p>
-                </div>
-                <form id="loginForm" onsubmit="handleLogin(event)">
-                    <div class="mb-3">
-                        <label class="form-label-modern" for="loginUser">Username</label>
-                        <div class="input-group auth-input-group">
-                            <span class="input-group-text"><i class="bi bi-person" aria-hidden="true"></i></span>
-                            <input type="text" class="form-control form-control-modern" id="loginUser" autocomplete="username" placeholder="Enter your username" required>
-                        </div>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label-modern" for="loginPass">Password</label>
-                        <div class="input-group auth-input-group">
-                            <span class="input-group-text"><i class="bi bi-lock" aria-hidden="true"></i></span>
-                            <input type="password" class="form-control form-control-modern" id="loginPass" autocomplete="current-password" placeholder="Enter your password" required>
-                            <button class="btn btn-eye" type="button" onclick="toggleVisibility('loginPass', this)" aria-label="Show password">
-                                <i class="bi bi-eye" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary-modern w-100 mt-1" id="loginBtn">
-                        <span>Sign In</span> <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                <!-- Switcher Tabs -->
+                <nav class="auth-tab-nav" role="tablist" aria-label="Select Authentication Mode">
+                    <button type="button" id="switchLoginBtn" class="auth-tab-btn active" role="tab" aria-selected="true" onclick="showAuthMode('login')">
+                        <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
+                        <span>Sign In</span>
                     </button>
-                </form>
-                <div class="text-center mt-4">
-                    <p class="text-muted small mb-0">Don't have an account? <button type="button" class="toggle-link" onclick="showAuthMode('register')">Register here</button></p>
-                </div>
-            </div>
-
-            <!-- REGISTRATION FORM -->
-            <div id="registerSection" style="display: none;">
-                <div class="form-header">
-                    <h2>Create Account</h2>
-                    <p>Register your Barangay SK Council or Admin account.</p>
-                </div>
-                <form id="registerForm" onsubmit="handleRegister(event)">
-                    <div class="mb-3">
-                        <label class="form-label-modern" for="regBarangay">Role / Barangay</label>
-                        <select class="form-select form-control-modern" id="regBarangay" required onchange="toggleMasterKey()">
-                            <option value="" disabled selected>Select your Barangay</option>
-                            <option value="System Admin" class="text-primary fw-bold">System Admin (Municipal)</option>
-                            <option value="Alkikan">Alkikan</option>
-                            <option value="Ampon">Ampon</option>
-                            <option value="Atlae">Atlae</option>
-                            <option value="Banahaw">Banahaw</option>
-                            <option value="Banate">Banate</option>
-                            <option value="Blaan">Blaan</option>
-                            <option value="Datal Batong">Datal Batong</option>
-                            <option value="Datal Bila">Datal Bila</option>
-                            <option value="Datal Tampal">Datal Tampal</option>
-                            <option value="J.P. Laurel">J.P. Laurel</option>
-                            <option value="Kawayan">Kawayan</option>
-                            <option value="Kibala">Kibala</option>
-                            <option value="Kiblat">Kiblat</option>
-                            <option value="Kinabalan">Kinabalan</option>
-                            <option value="Lower Mainit">Lower Mainit</option>
-                            <option value="Lutay">Lutay</option>
-                            <option value="Malabod">Malabod</option>
-                            <option value="Malalag Cogon">Malalag Cogon</option>
-                            <option value="Malandag">Malandag</option>
-                            <option value="Malungon Gamay">Malungon Gamay</option>
-                            <option value="Nagpan">Nagpan</option>
-                            <option value="Panamin">Panamin</option>
-                            <option value="Poblacion">Poblacion</option>
-                            <option value="San Juan">San Juan</option>
-                            <option value="San Miguel">San Miguel</option>
-                            <option value="San Roque">San Roque</option>
-                            <option value="Talus">Talus</option>
-                            <option value="Tamban">Tamban</option>
-                            <option value="Upper Biangan">Upper Biangan</option>
-                            <option value="Upper Lumabat">Upper Lumabat</option>
-                            <option value="Upper Mainit">Upper Mainit</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3" id="masterKeySection" style="display: none;">
-                        <label class="form-label-modern text-danger" for="regMasterKey">Default Admin Password</label>
-                        <input type="password" class="form-control form-control-modern border-danger" id="regMasterKey" placeholder="Required to create Admin account">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label-modern" for="regUser">Desired Username</label>
-                        <input type="text" class="form-control form-control-modern" id="regUser" autocomplete="username" placeholder="Choose a username" required>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label-modern" for="regPass">Desired Password</label>
-                        <div class="input-group auth-input-group">
-                            <input type="password" class="form-control form-control-modern" id="regPass" autocomplete="new-password" placeholder="Choose a strong password" required>
-                            <button class="btn btn-eye" type="button" onclick="toggleVisibility('regPass', this)" aria-label="Show password">
-                                <i class="bi bi-eye" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary-modern w-100 mt-1" id="regBtn">
-                        Create Account
+                    <button type="button" id="switchRegBtn" class="auth-tab-btn" role="tab" aria-selected="false" onclick="showAuthMode('register')">
+                        <i class="bi bi-person-plus" aria-hidden="true"></i>
+                        <span>Create Account</span>
                     </button>
-                </form>
-                <div class="text-center mt-4">
-                    <p class="text-muted small mb-0">Already have an account? <button type="button" class="toggle-link" onclick="showAuthMode('login')">Sign In</button></p>
+                </nav>
+
+                <!-- 1. SIGN IN FORM -->
+                <div id="loginSection" class="auth-view-pane">
+                    <div class="auth-heading">
+                        <h2>Welcome Back</h2>
+                        <p>Sign in with your Barangay SK Council or Admin credentials.</p>
+                    </div>
+
+                    <form id="loginForm" onsubmit="handleLogin(event)">
+                        <div class="modern-field-group">
+                            <label for="loginUser">Username</label>
+                            <div class="input-shell">
+                                <span class="field-icon"><i class="bi bi-person" aria-hidden="true"></i></span>
+                                <input type="text" id="loginUser" autocomplete="username" placeholder="Enter your username" required autofocus>
+                            </div>
+                        </div>
+
+                        <div class="modern-field-group mb-4">
+                            <label for="loginPass">Password</label>
+                            <div class="input-shell">
+                                <span class="field-icon"><i class="bi bi-lock" aria-hidden="true"></i></span>
+                                <input type="password" id="loginPass" autocomplete="current-password" placeholder="Enter your password" required>
+                                <button class="btn-eye-toggle" type="button" onclick="toggleVisibility('loginPass', this)" aria-label="Show password">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-brand-submit" id="loginBtn">
+                            <span>Sign In to Dashboard</span>
+                            <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-4 pt-2">
+                        <p class="text-muted small mb-0">
+                            Don't have an SK Council account?
+                            <button type="button" class="toggle-link-btn ms-1" onclick="showAuthMode('register')">Register here</button>
+                        </p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="mt-4 pt-3 border-top d-flex flex-wrap justify-content-between align-items-center gap-2 text-secondary" style="font-size: 0.78rem;">
-                <span>System Developed by <strong class="text-dark">Junniell Mahinay</strong></span>
-                <span class="app-version-pill">Version v2.0.0</span>
-            </div>
+                <!-- 2. REGISTRATION FORM -->
+                <div id="registerSection" class="auth-view-pane" style="display: none;">
+                    <div class="auth-heading">
+                        <h2>Create Account</h2>
+                        <p>Register your official Barangay SK Council account.</p>
+                    </div>
 
+                    <!-- Admin Approval Warning Banner -->
+                    <div class="admin-approval-notice">
+                        <i class="bi bi-shield-lock-fill" aria-hidden="true"></i>
+                        <p>
+                            <strong>Admin Verification Required:</strong> All newly registered accounts are set to <em>Pending</em> and must be approved by the Municipal Administrator before access is enabled.
+                        </p>
+                    </div>
+
+                    <form id="registerForm" onsubmit="handleRegister(event)">
+                        <div class="modern-field-group">
+                            <label for="regBarangay">Jurisdiction / Barangay</label>
+                            <div class="input-shell">
+                                <span class="field-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span>
+                                <select id="regBarangay" required onchange="toggleMasterKey()">
+                                    <option value="" disabled selected>Select your Barangay</option>
+                                    <option value="System Admin" class="text-primary fw-bold">🌟 System Admin (Municipal)</option>
+                                    <option value="Alkikan">Alkikan</option>
+                                    <option value="Ampon">Ampon</option>
+                                    <option value="Atlae">Atlae</option>
+                                    <option value="Banahaw">Banahaw</option>
+                                    <option value="Banate">Banate</option>
+                                    <option value="Blaan">Blaan</option>
+                                    <option value="Datal Batong">Datal Batong</option>
+                                    <option value="Datal Bila">Datal Bila</option>
+                                    <option value="Datal Tampal">Datal Tampal</option>
+                                    <option value="J.P. Laurel">J.P. Laurel</option>
+                                    <option value="Kawayan">Kawayan</option>
+                                    <option value="Kibala">Kibala</option>
+                                    <option value="Kiblat">Kiblat</option>
+                                    <option value="Kinabalan">Kinabalan</option>
+                                    <option value="Lower Mainit">Lower Mainit</option>
+                                    <option value="Lutay">Lutay</option>
+                                    <option value="Malabod">Malabod</option>
+                                    <option value="Malalag Cogon">Malalag Cogon</option>
+                                    <option value="Malandag">Malandag</option>
+                                    <option value="Malungon Gamay">Malungon Gamay</option>
+                                    <option value="Nagpan">Nagpan</option>
+                                    <option value="Panamin">Panamin</option>
+                                    <option value="Poblacion">Poblacion</option>
+                                    <option value="San Juan">San Juan</option>
+                                    <option value="San Miguel">San Miguel</option>
+                                    <option value="San Roque">San Roque</option>
+                                    <option value="Talus">Talus</option>
+                                    <option value="Tamban">Tamban</option>
+                                    <option value="Upper Biangan">Upper Biangan</option>
+                                    <option value="Upper Lumabat">Upper Lumabat</option>
+                                    <option value="Upper Mainit">Upper Mainit</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- System Admin Master Key Verification (Conditional) -->
+                        <div class="modern-field-group" id="masterKeySection" style="display: none;">
+                            <label for="regMasterKey" class="text-danger fw-bold">Default Admin Password</label>
+                            <div class="input-shell" style="border-color: #fca5a5;">
+                                <span class="field-icon text-danger"><i class="bi bi-key-fill" aria-hidden="true"></i></span>
+                                <input type="password" id="regMasterKey" placeholder="Required for Municipal Admin creation">
+                            </div>
+                        </div>
+
+                        <!-- Applicant Identity Information -->
+                        <div class="row g-2 mb-2">
+                            <div class="col-sm-6">
+                                <div class="modern-field-group">
+                                    <label for="regFullName">Official Full Name</label>
+                                    <div class="input-shell">
+                                        <span class="field-icon"><i class="bi bi-card-text" aria-hidden="true"></i></span>
+                                        <input type="text" id="regFullName" placeholder="e.g. Juan Dela Cruz" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="modern-field-group">
+                                    <label for="regContact">Contact Number</label>
+                                    <div class="input-shell">
+                                        <span class="field-icon"><i class="bi bi-telephone" aria-hidden="true"></i></span>
+                                        <input type="tel" id="regContact" placeholder="0912 345 6789">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modern-field-group">
+                            <label for="regUser">Desired Username</label>
+                            <div class="input-shell">
+                                <span class="field-icon"><i class="bi bi-at" aria-hidden="true"></i></span>
+                                <input type="text" id="regUser" autocomplete="username" placeholder="Choose a username" required>
+                            </div>
+                        </div>
+
+                        <div class="modern-field-group mb-4">
+                            <label for="regPass">Desired Password</label>
+                            <div class="input-shell">
+                                <span class="field-icon"><i class="bi bi-shield-lock" aria-hidden="true"></i></span>
+                                <input type="password" id="regPass" autocomplete="new-password" placeholder="Choose a secure password" required>
+                                <button class="btn-eye-toggle" type="button" onclick="toggleVisibility('regPass', this)" aria-label="Show password">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-brand-submit" id="regBtn">
+                            <span>Submit Registration for Approval</span>
+                            <i class="bi bi-check-circle" aria-hidden="true"></i>
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-4 pt-2">
+                        <p class="text-muted small mb-0">
+                            Already have an active account?
+                            <button type="button" class="toggle-link-btn ms-1" onclick="showAuthMode('login')">Sign In here</button>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Footer Credit & Version -->
+                <div class="mt-4 pt-4 border-top d-flex justify-content-between align-items-center text-muted" style="font-size: 0.8rem;">
+                    <span>Developed by <strong class="text-dark">Junniell Mahinay</strong></span>
+                    <span class="badge bg-light text-secondary border px-2 py-1">Version v2.0.0</span>
+                </div>
+
+            </div>
         </section>
     </main>
 
     <script>
+        // Redirect to dashboard if session token already active
+        if (sessionStorage.getItem('sk_auth_token')) {
+            window.location.replace('index.html');
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function toggleVisibility(inputId, btn) {
             const input = document.getElementById(inputId);
             const icon = btn.querySelector('i');
@@ -396,23 +903,21 @@
             }
         }
 
-        function toggleForms() {
-            const login = document.getElementById('loginSection');
-            showAuthMode(login.style.display === 'none' ? 'login' : 'register');
-        }
-
         function toggleMasterKey() {
             const brgy = document.getElementById('regBarangay').value;
             const mkSection = document.getElementById('masterKeySection');
+            const masterInput = document.getElementById('regMasterKey');
             if (brgy === 'System Admin') {
                 mkSection.style.display = 'block';
-                document.getElementById('regMasterKey').required = true;
+                masterInput.required = true;
             } else {
                 mkSection.style.display = 'none';
-                document.getElementById('regMasterKey').required = false;
-                document.getElementById('regMasterKey').value = '';
+                masterInput.required = false;
+                masterInput.value = '';
             }
         }
+
+        const MASTER_ADMIN_HASH = '45121f15004d6f25f98f81c8d7fb2368a28650fdb7c4f07d0ba818dd1d1bb3eb';
 
         async function hashPassword(plainText) {
             const encoder = new TextEncoder();
@@ -432,25 +937,32 @@
             const inputPass = document.getElementById('loginPass').value.trim();
 
             try {
-                // 1. Master Admin Hardcoded Fallback / Bootstrap (Case-Insensitive Username)
-                if (inputUser.toLowerCase() === 'admin' && inputPass === 'malungonsk2024') {
+                const inputHash = await hashPassword(inputPass);
+
+                // 1. Master Admin Hardcoded Fallback / Bootstrap (Hashed verification)
+                if (inputUser.toLowerCase() === 'admin' && inputHash === MASTER_ADMIN_HASH) {
                     sessionStorage.setItem('sk_auth_token', 'ADMIN_SESSION_TOKEN');
                     sessionStorage.setItem('sk_user_role', 'Admin');
                     sessionStorage.setItem('sk_user_barangay', 'All');
                     sessionStorage.setItem('sk_username', 'admin');
+                    sessionStorage.setItem('sk_status', 'Approved');
                     window.location.href = 'index.html';
                     return;
                 }
 
                 // 2. Query Firestore Users Collection
-                const inputHash = await hashPassword(inputPass);
                 let querySnap = await db.collection('users').where('username', '==', inputUser).get();
                 if (querySnap.empty && inputUser !== inputUser.toLowerCase()) {
                     querySnap = await db.collection('users').where('username', '==', inputUser.toLowerCase()).get();
                 }
 
                 if (querySnap.empty) {
-                    Swal.fire('Error', 'Invalid username or password.', 'error');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid Credentials',
+                        text: 'Incorrect username or password. Please verify and try again.',
+                        confirmButtonColor: '#2563eb'
+                    });
                     return;
                 }
 
@@ -465,15 +977,57 @@
                     }
                 });
 
-                if (authenticated && activeUser) {
-                    sessionStorage.setItem('sk_auth_token', activeUser.id);
-                    sessionStorage.setItem('sk_user_role', activeUser.role || 'Barangay User');
-                    sessionStorage.setItem('sk_user_barangay', activeUser.barangay || activeUser.Barangay || '');
-                    sessionStorage.setItem('sk_username', activeUser.username);
-                    window.location.href = 'index.html';
-                } else {
-                    Swal.fire('Error', 'Invalid username or password.', 'error');
+                if (!authenticated || !activeUser) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid Credentials',
+                        text: 'Incorrect username or password. Please verify and try again.',
+                        confirmButtonColor: '#2563eb'
+                    });
+                    return;
                 }
+
+                // 3. Status Verification (Admin Approval Check)
+                const userStatus = activeUser.status || 'Approved'; // Legacy accounts default to Approved
+
+                if (userStatus === 'Pending') {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Account Pending Approval',
+                        html: `<p class="mb-2">Your registration for <strong>${escapeHtml(activeUser.barangay ? 'Barangay ' + activeUser.barangay : 'SK Council')}</strong> has been submitted and is currently awaiting approval by the Municipal Admin.</p><p class="text-muted small mb-0">Please coordinate with the SK Federation Office to verify and activate your account.</p>`,
+                        confirmButtonColor: '#2563eb'
+                    });
+                    return;
+                }
+
+                if (userStatus === 'Rejected') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Registration Declined',
+                        text: 'This account registration request was declined by the administrator. Please contact the SK Federation Office for details.',
+                        confirmButtonColor: '#ef4444'
+                    });
+                    return;
+                }
+
+                if (userStatus === 'Deactivated') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Account Deactivated',
+                        text: 'This account has been deactivated. Please contact the Municipal Administrator.',
+                        confirmButtonColor: '#f59e0b'
+                    });
+                    return;
+                }
+
+                // 4. Session Setup
+                sessionStorage.setItem('sk_auth_token', activeUser.id);
+                sessionStorage.setItem('sk_user_role', activeUser.role || 'Barangay User');
+                sessionStorage.setItem('sk_user_barangay', activeUser.barangay || activeUser.Barangay || '');
+                sessionStorage.setItem('sk_username', activeUser.username);
+                sessionStorage.setItem('sk_status', userStatus);
+                window.location.href = 'index.html';
+
             } catch (err) {
                 console.error('[Login Error]', err);
                 Swal.fire('Error', 'Failed to authenticate with Cloud Firestore: ' + err.message, 'error');
@@ -487,12 +1041,14 @@
             e.preventDefault();
             const btn = document.getElementById('regBtn');
             const originalHtml = btn.innerHTML;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
             btn.disabled = true;
 
             const username = document.getElementById('regUser').value.trim();
             const password = document.getElementById('regPass').value.trim();
             const barangay = document.getElementById('regBarangay').value;
+            const fullName = document.getElementById('regFullName').value.trim();
+            const contactNumber = document.getElementById('regContact').value.trim();
             const masterKey = document.getElementById('regMasterKey').value;
 
             try {
@@ -500,8 +1056,14 @@
                 let assignedBarangay = barangay;
 
                 if (barangay === 'System Admin') {
-                    if (masterKey !== 'malungonsk2024') {
-                        Swal.fire('Access Denied', 'Incorrect Default Admin Password! Registration denied.', 'error');
+                    const keyHash = await hashPassword(masterKey);
+                    if (keyHash !== MASTER_ADMIN_HASH) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Access Denied',
+                            text: 'Incorrect Default Admin Password! System Admin registration denied.',
+                            confirmButtonColor: '#ef4444'
+                        });
                         return;
                     }
                     role = 'Admin';
@@ -511,7 +1073,12 @@
                 // Check if username already exists
                 const existingSnap = await db.collection('users').where('username', '==', username).get();
                 if (!existingSnap.empty) {
-                    Swal.fire('Error', 'Username already exists! Please choose another.', 'error');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Username Taken',
+                        text: 'Username already exists! Please choose another username.',
+                        confirmButtonColor: '#2563eb'
+                    });
                     return;
                 }
 
@@ -519,19 +1086,30 @@
 
                 await db.collection('users').add({
                     username: username,
+                    fullName: fullName,
+                    contactNumber: contactNumber,
                     passwordHash: passwordHash,
                     role: role,
                     barangay: assignedBarangay,
+                    status: 'Pending',
+                    isApproved: false,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                Swal.fire('Success', 'Account created successfully! You can now log in.', 'success').then(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Registration Submitted!',
+                    html: `Your account registration for <strong>${escapeHtml(assignedBarangay === 'All' ? 'System Admin' : 'Barangay ' + assignedBarangay)}</strong> has been recorded.<br><br><span class="badge bg-warning text-dark py-2 px-3 fs-6">Status: Pending Admin Approval</span><br><br>The Municipal Admin / SK Federation will review your credentials and approve your account before you can log in.`,
+                    confirmButtonText: 'Proceed to Sign In',
+                    confirmButtonColor: '#2563eb'
+                }).then(() => {
                     showAuthMode('login');
                     document.getElementById('loginUser').value = username;
+                    document.getElementById('loginPass').value = '';
                 });
             } catch (err) {
                 console.error('[Registration Error]', err);
-                Swal.fire('Error', 'Failed to create account in Cloud Firestore: ' + err.message, 'error');
+                Swal.fire('Error', 'Failed to submit account registration in Cloud Firestore: ' + err.message, 'error');
             } finally {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;

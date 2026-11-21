@@ -153,9 +153,11 @@ The profiling process operates along a 4-step pipeline that transitions data fro
 
 ### 5.1 Authentication & Account Registration
 - **URL**: `https://sk-lgumalungon-profiling-sys.web.app/login.html`
-- **Signing In**: Enter the designated Username and Password. Upon successful verification, an encrypted session token is stored in the browser's `sessionStorage`.
-- **Registering a Barangay Account**: Click *"Register here"*, select your Barangay from the dropdown list of 31 barangays, choose your username and password, and submit.
-- **Registering a System Admin**: Select **"🌟 System Admin"** in the dropdown. An additional field—**Default Admin Password**—will appear. The registration will be denied unless the correct administrative master key is provided.
+- **Signing In**: Enter the designated Username and Password. Upon successful verification, an encrypted session token is stored in the browser's `sessionStorage`. Accounts in `Pending`, `Rejected`, or `Deactivated` status are gated from accessing the dashboard until approved.
+- **Registering a Barangay Account**: Click *"Register here"*, select your Barangay from the dropdown list of 31 barangays, fill in your Official Full Name and Contact Number, choose your username and password, and submit.
+  - *Admin Approval Required*: All new account registrations are created with `Pending` status. The Municipal Admin must verify and approve the account before the user can log in.
+- **Registering a System Admin**: Select **"System Admin (Municipal)"** in the dropdown. The **Default Admin Password** field will appear. The registration requires the administrative master key and is recorded for administrative activation.
+- **Admin User Management**: System Admins have access to the dedicated **User Accounts** tab to review pending account requests, view applicant details, and approve, reject, deactivate, or delete accounts with full audit trail logging.
 
 ### 5.2 Analytics Dashboard
 The default landing view delivers instant demographic intelligence:
