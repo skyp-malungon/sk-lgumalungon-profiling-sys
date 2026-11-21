@@ -1189,9 +1189,9 @@ async function triggerWebSync() {
         if (result.isConfirmed) {
             uiLoading('Merging into Master Registry', `Syncing ${count} records to Cloud Firestore...`);
 
-            // Chunk into 200 docs (400 ops) per batch to stay under Firestore's 500-op batch limit
+            // Chunk into 4 docs (8 write ops) per batch to stay under Firestore's 20 get()/exists() rules call limit per batch
             const docs = snap.docs;
-            const CHUNK_SIZE = 200;
+            const CHUNK_SIZE = 4;
             for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
                 const chunk = docs.slice(i, i + CHUNK_SIZE);
                 const batch = db.batch();

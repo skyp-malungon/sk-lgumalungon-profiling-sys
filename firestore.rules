@@ -88,21 +88,27 @@ service cloud.firestore {
       return get(userDocPath()).data;
     }
 
+    function isApprovedUserData(data) {
+      return 'status' in data &&
+             data.status == 'Approved' &&
+             'isApproved' in data &&
+             data.isApproved == true;
+    }
+
+    function isAdminUserData(data) {
+      return isApprovedUserData(data) &&
+             'role' in data &&
+             data.role == 'Admin';
+    }
+
     function isApprovedUser() {
-      return userExists() &&
-             'status' in userData() &&
-             userData().status == 'Approved' &&
-             'isApproved' in userData() &&
-             userData().isApproved == true;
+      return userExists() && isApprovedUserData(userData());
     }
 
     function isAdmin() {
-      return (isApprovedUser() &&
-              'role' in userData() &&
-              userData().role == 'Admin') ||
-             (isAuthenticated() &&
-              'role' in request.auth.token &&
-              request.auth.token.role == 'Admin');
+      return isAuthenticated() &&
+             (('role' in request.auth.token && request.auth.token.role == 'Admin') ||
+              (userExists() && isAdminUserData(userData())));
     }
 
     function userBarangay() {
@@ -207,24 +213,27 @@ service cloud.firestore {
              isOptionalDateOrString(data, 'updatedAt');
     }
 
-    function isValidYouthProfile(data) {
-      return data.keys().hasOnly([
-               'Timestamp', 'FormNo.', 'Barangay', 'Full Name', 'Nickname', 'Sex',
-               'Date of Birth', 'Age', 'calculatedAge', 'ageBracket', 'Place of Birth',
-               'Civil Status', 'Tribe', 'Citizenship', 'Religion', 'Sitio/Purok',
-               'Complete Address', 'Contact Number', 'Email Address', 'Educational Status',
-               'Highest Educational Attainment', 'School/Institution', 'Course/Strand',
-               'Employment Status', 'Nature of Work', 'Skills/Talents', 'Languages Spoken',
-               'Member of Youth Organization', 'Organizations', 'Leadership Position',
-               'Volunteer Activities', 'Areas of Interest', 'Youth Sector',
-               'Total Household Members', 'Household Income', 'Internet Access',
-               'Internet Connection Type', 'Preferred Announcement Mode', '5-Year Goals',
-               'Desired Programs', 'Participation Mode', 'Data Consent',
-               'Date Accomplished', 'SK Data Collector', 'Date Received',
-               'uid', 'approvedAt', 'updatedAt',
-               'createdAt', 'submittedAt', 'createdBy', 'updatedBy'
-             ]) &&
-             'Barangay' in data &&
+    function youthProfileAllowedKeys() {
+      return [
+        'Timestamp', 'FormNo.', 'Barangay', 'Full Name', 'Nickname', 'Sex',
+        'Date of Birth', 'Age', 'calculatedAge', 'ageBracket', 'Place of Birth',
+        'Civil Status', 'Tribe', 'Citizenship', 'Religion', 'Sitio/Purok',
+        'Complete Address', 'Contact Number', 'Email Address', 'Educational Status',
+        'Highest Educational Attainment', 'School/Institution', 'Course/Strand',
+        'Employment Status', 'Nature of Work', 'Skills/Talents', 'Languages Spoken',
+        'Member of Youth Organization', 'Organizations', 'Leadership Position',
+        'Volunteer Activities', 'Areas of Interest', 'Youth Sector',
+        'Total Household Members', 'Household Income', 'Internet Access',
+        'Internet Connection Type', 'Preferred Announcement Mode', '5-Year Goals',
+        'Desired Programs', 'Participation Mode', 'Data Consent',
+        'Date Accomplished', 'SK Data Collector', 'Date Received',
+        'uid', 'approvedAt', 'updatedAt',
+        'createdAt', 'submittedAt', 'createdBy', 'updatedBy'
+      ];
+    }
+
+    function hasValidYouthProfileCoreAndFields(data) {
+      return 'Barangay' in data &&
              data['Barangay'] is string &&
              data['Barangay'].size() > 0 &&
              data['Barangay'].size() <= 100 &&
@@ -238,6 +247,11 @@ service cloud.firestore {
              isOptionalNullableString(data, 'createdBy', 150) &&
              isOptionalNullableString(data, 'updatedBy', 150) &&
              hasValidCommonSurveyFields(data);
+    }
+
+    function isValidYouthProfile(data) {
+      return data.keys().hasOnly(youthProfileAllowedKeys()) &&
+             hasValidYouthProfileCoreAndFields(data);
     }
 
     function isValidOnlineSubmission(data) {
@@ -409,13 +423,18 @@ service cloud.firestore {
                        isValidYouthProfile(request.resource.data) &&
                        belongsToUserBarangay(request.resource.data.Barangay);
 
-      allow update: if isApprovedUser() &&
-                       isValidYouthProfile(request.resource.data) &&
-                       belongsToUserBarangay(resource.data.Barangay) &&
+      allow update: if (isAdmin() ||
+                        (isApprovedUser() &&
+                         'Barangay' in resource.data &&
+                         belongsToUserBarangay(resource.data.Barangay))) &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(youthProfileAllowedKeys()) &&
+                       hasValidYouthProfileCoreAndFields(request.resource.data) &&
                        belongsToUserBarangay(request.resource.data.Barangay);
 
-      allow delete: if isApprovedUser() &&
-                       belongsToUserBarangay(resource.data.Barangay);
+      allow delete: if isAdmin() ||
+                       (isApprovedUser() &&
+                        'Barangay' in resource.data &&
+                        belongsToUserBarangay(resource.data.Barangay));
     }
 
     // ===============================================================
