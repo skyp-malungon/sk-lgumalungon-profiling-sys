@@ -1,71 +1,66 @@
 rules_version = '2';
 
 // ===============================================================
-// Assumed Data Model
+// Assumed Data Model (SKYMS - Malungon, Sarangani Province)
 // ===============================================================
 //
 // Collection: youth_profiles
 // Document ID: {profileId} (UUID or auto-generated ID)
 // Fields:
-//   - Barangay / barangay: string (required, 1-100 chars) - Assigned Barangay
-//   - Full Name / fullName / name: string (required, 1-150 chars) - Youth full name
-//   - Sex: string (optional, max 30 chars) - Biological sex / gender
-//   - Date of Birth: string/timestamp (optional) - Birthdate
-//   - Civil Status: string (optional, max 50 chars) - Civil status
-//   - Contact Number: string (optional, max 50 chars) - Phone / contact
-//   - Sitio/Purok: string (optional, max 100 chars) - Sub-barangay territory
-//   - Tribe: string (optional, max 100 chars) - Ethnic affiliation
-//   - Educational Status: string (optional, max 100 chars) - e.g. In-School / OSY
-//   - Highest Educational Attainment: string (optional, max 100 chars)
-//   - Employment Status: string (optional, max 100 chars) - e.g. Employed / Student
-//   - Youth Sector: string (optional, max 100 chars) - Specific demographic sector
+//   - Barangay: string (required, 1-100 chars) - Assigned Barangay
+//   - Full Name: string (required, 1-150 chars) - Youth full name
+//   - Timestamp, Date of Birth, Date Accomplished, Date Received, approvedAt, updatedAt: timestamp or string (optional, <= 100 chars)
+//   - Age: int/float (0-120), string (<= 10 chars), or null (optional)
+//   - calculatedAge: int/float (0-120) or null (optional)
+//   - Total Household Members: int/float (0-100), string (<= 50 chars), or null (optional)
+//   - Multi-select / goals / address strings: string (optional, <= 2000 chars)
+//   - Standard survey & system strings: string (optional, <= 500 chars)
 //
 // Collection: online_submissions
 // Document ID: {submissionId} (auto-generated ID)
 // Fields:
-//   - Barangay / barangay: string (required, 1-100 chars) - Target Barangay
-//   - Full Name / fullName: string (required, 1-150 chars) - Applicant full name
-//   - Contact Number / contactNumber: string (optional, max 50 chars)
-//   - Sitio/Purok / sitio: string (optional, max 100 chars)
+//   - Barangay / barangay: string (at least one required, 1-100 chars) - Target Barangay
+//   - Full Name / fullName: string (at least one required, 1-150 chars) - Applicant full name
+//   - Survey fields (TitleCase matching youth_profiles, excluding approvedAt) and camelCase intake keys
+//   - Forbidden fields: approvedAt, role, status, isApproved, password, passwordHash
 //
 // Collection: users
-// Document ID: {userId} (auto-generated ID or matches Firebase Auth UID)
+// Document ID: {userId} (Firebase Auth UID)
 // Fields:
-//   - username: string (optional, max 100 chars) - Account username
-//   - passwordHash: string (optional, max 200 chars) - Hashed password
-//   - password: string (optional, max 200 chars) - Legacy password string
-//   - fullName: string (optional, max 150 chars) - User full name
-//   - contactNumber: string (optional, max 50 chars) - Phone / contact
-//   - role: string (optional, max 50 chars) - 'Admin' or 'Barangay User'
-//   - barangay / Barangay: string (optional, max 100 chars) - Jurisdiction / Barangay
-//   - status: string (optional, max 50 chars) - 'Pending', 'Approved', 'Rejected', 'Deactivated'
-//   - isApproved: bool (optional) - Approval state flag
-//   - approvedBy: string (optional, max 100 chars) - Approving admin username
-//   - approvedAt: timestamp/string (optional) - Approval timestamp
-//   - rejectedBy: string (optional, max 100 chars) - Rejecting admin username
-//   - rejectedAt: timestamp/string (optional) - Rejection timestamp
-//   - updatedAt: timestamp/string (optional) - Last update timestamp
-//   - createdAt: timestamp/string (optional) - Registration timestamp
-//   - email: string (optional, max 150 chars) - Account email
+//   - uid: string (required on create, == userId, <= 128 chars)
+//   - username: string (required on create, 1-100 chars)
+//   - email: string (required on create, 1-150 chars)
+//   - fullName: string (optional, <= 150 chars)
+//   - displayName: string or null (optional, <= 150 chars)
+//   - photoURL: string (http/https URL or empty) or null (optional, <= 500 chars)
+//   - contactNumber: string or null (optional, <= 50 chars)
+//   - role: string (required on create: 'Barangay User'; admin update: 'Admin' or 'Barangay User')
+//   - barangay: string (required on create: 1-100 chars, not 'All' or 'System Admin')
+//   - status: string (required on create: 'Pending'; admin update: 'Pending'|'Approved'|'Rejected'|'Deactivated')
+//   - isApproved: bool (required on create: false)
+//   - authProvider: string (required on create: 'google' or 'password')
+//   - approvedBy / rejectedBy: string or null (optional, <= 100 chars)
+//   - approvedAt / rejectedAt / createdAt / updatedAt: timestamp, string (<= 100 chars), or null (optional)
+//   - Forbidden fields: password, passwordHash
 //
-// Collection: audit_logs
+// Collection: audit_logs (immutable)
 // Document ID: {logId} (auto-generated ID)
 // Fields:
-//   - action / Action: string (optional, max 50 chars) - Event action (e.g., LOGIN, EDIT, DELETE, USER_APPROVE, USER_REJECT)
-//   - recordName: string (optional, max 200 chars) - Target record name or description
-//   - details / Details: string (optional, max 2000 chars) - Change details / diff
-//   - barangay / Barangay: string (optional, max 100 chars) - Operator/record barangay
-//   - user / User: string (optional, max 100 chars) - Operator username / UID
-//   - timestamp / Timestamp: timestamp/string (optional) - Event occurrence time
+//   - action: string (required, 1-50 chars)
+//   - recordName: string (required, 1-200 chars)
+//   - details: string (required, <= 2000 chars)
+//   - barangay: string (required, 1-100 chars)
+//   - user: string (required, 1-100 chars)
+//   - timestamp: timestamp or string (required, 1-100 chars)
 //
 // Collection: counters
-// Document ID: {counterId} (e.g., barangay-year sequence identifier)
+// Document ID: {counterId}
 // Fields:
-//   - lastSerial: int/number (required, >= 0) - Latest sequential serial counter
-//   - barangay / Barangay: string (optional, max 100 chars) - Associated barangay
-//   - year: string/int/number (optional) - Year identifier
-//   - prefix: string (optional, max 50 chars) - Sequence prefix (e.g., SK-Mal)
-//   - updatedAt / timestamp: timestamp/string (optional) - Last update time
+//   - lastSerial: int (required, >= 0)
+//   - barangay / Barangay: string (optional, <= 100 chars)
+//   - year: int (2000-2100) or string (optional, <= 10 chars)
+//   - prefix: string (optional, <= 50 chars)
+//   - updatedAt / timestamp: timestamp or string (optional, <= 100 chars)
 //
 // ===============================================================
 
@@ -76,177 +71,407 @@ service cloud.firestore {
     // Helper Functions
     // ===============================================================
 
-    // Check if the request is from an authenticated Firebase Auth user
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Check if the authenticated user has the Admin role in custom claims
+    function userDocPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function userExists() {
+      return isAuthenticated() && exists(userDocPath());
+    }
+
+    function userData() {
+      return get(userDocPath()).data;
+    }
+
+    function isApprovedUser() {
+      return userExists() &&
+             'status' in userData() &&
+             userData().status == 'Approved' &&
+             'isApproved' in userData() &&
+             userData().isApproved == true;
+    }
+
     function isAdmin() {
-      return isAuthenticated() &&
-             'role' in request.auth.token &&
-             request.auth.token.role == 'Admin';
+      return (isApprovedUser() &&
+              'role' in userData() &&
+              userData().role == 'Admin') ||
+             (isAuthenticated() &&
+              'role' in request.auth.token &&
+              request.auth.token.role == 'Admin');
+    }
+
+    function userBarangay() {
+      return userData().barangay;
+    }
+
+    function belongsToUserBarangay(brgy) {
+      return isAdmin() ||
+             (isApprovedUser() &&
+              'barangay' in userData() &&
+              brgy is string &&
+              brgy == userBarangay());
+    }
+
+    function isValidUrl(url) {
+      return url is string &&
+             (url.matches('^https://.*') || url.matches('^http://.*'));
+    }
+
+    function isOptionalNullableString(data, key, maxLen) {
+      return !(key in data) ||
+             data[key] == null ||
+             (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    function isOptionalDateOrString(data, key) {
+      return !(key in data) ||
+             data[key] == null ||
+             data[key] is timestamp ||
+             (data[key] is string && data[key].size() <= 100);
+    }
+
+    function isOptionalPhotoUrl(data, key) {
+      return !(key in data) ||
+             data[key] == null ||
+             data[key] == '' ||
+             (isValidUrl(data[key]) && data[key].size() <= 500);
+    }
+
+    function isValidNumberRange(val, minVal, maxVal) {
+      return (val is int || val is float) && val >= minVal && val <= maxVal;
     }
 
     // ===============================================================
     // Domain Validators (Validator Function Pattern)
     // ===============================================================
 
-    // Validate barangay field existence, type, and bounded length
-    function hasValidBarangay(data) {
-      return ('Barangay' in data && data['Barangay'] is string && data['Barangay'].size() > 0 && data['Barangay'].size() <= 100) ||
-             ('barangay' in data && data['barangay'] is string && data['barangay'].size() > 0 && data['barangay'].size() <= 100);
+    // Shared survey field type & length checks for TitleCase youth profile fields
+    function hasValidCommonSurveyFields(data) {
+      return isOptionalDateOrString(data, 'Timestamp') &&
+             isOptionalNullableString(data, 'FormNo.', 100) &&
+             isOptionalNullableString(data, 'Nickname', 100) &&
+             isOptionalNullableString(data, 'Sex', 50) &&
+             isOptionalDateOrString(data, 'Date of Birth') &&
+             (!('Age' in data) ||
+              data['Age'] == null ||
+              (data['Age'] is string && data['Age'].size() <= 10) ||
+              isValidNumberRange(data['Age'], 0, 120)) &&
+             (!('calculatedAge' in data) ||
+              data.calculatedAge == null ||
+              isValidNumberRange(data.calculatedAge, 0, 120)) &&
+             isOptionalNullableString(data, 'ageBracket', 50) &&
+             isOptionalNullableString(data, 'Place of Birth', 200) &&
+             isOptionalNullableString(data, 'Civil Status', 50) &&
+             isOptionalNullableString(data, 'Tribe', 100) &&
+             isOptionalNullableString(data, 'Citizenship', 100) &&
+             isOptionalNullableString(data, 'Religion', 100) &&
+             isOptionalNullableString(data, 'Sitio/Purok', 150) &&
+             isOptionalNullableString(data, 'Complete Address', 2000) &&
+             isOptionalNullableString(data, 'Contact Number', 50) &&
+             isOptionalNullableString(data, 'Email Address', 150) &&
+             isOptionalNullableString(data, 'Educational Status', 150) &&
+             isOptionalNullableString(data, 'Highest Educational Attainment', 150) &&
+             isOptionalNullableString(data, 'School/Institution', 250) &&
+             isOptionalNullableString(data, 'Course/Strand', 200) &&
+             isOptionalNullableString(data, 'Employment Status', 150) &&
+             isOptionalNullableString(data, 'Nature of Work', 200) &&
+             isOptionalNullableString(data, 'Skills/Talents', 2000) &&
+             isOptionalNullableString(data, 'Languages Spoken', 2000) &&
+             isOptionalNullableString(data, 'Member of Youth Organization', 50) &&
+             isOptionalNullableString(data, 'Organizations', 2000) &&
+             isOptionalNullableString(data, 'Leadership Position', 2000) &&
+             isOptionalNullableString(data, 'Volunteer Activities', 2000) &&
+             isOptionalNullableString(data, 'Areas of Interest', 2000) &&
+             isOptionalNullableString(data, 'Youth Sector', 2000) &&
+             (!('Total Household Members' in data) ||
+              data['Total Household Members'] == null ||
+              (data['Total Household Members'] is string && data['Total Household Members'].size() <= 50) ||
+              isValidNumberRange(data['Total Household Members'], 0, 100)) &&
+             isOptionalNullableString(data, 'Household Income', 100) &&
+             isOptionalNullableString(data, 'Internet Access', 50) &&
+             isOptionalNullableString(data, 'Internet Connection Type', 100) &&
+             isOptionalNullableString(data, 'Preferred Announcement Mode', 2000) &&
+             isOptionalNullableString(data, '5-Year Goals', 2000) &&
+             isOptionalNullableString(data, 'Desired Programs', 2000) &&
+             isOptionalNullableString(data, 'Participation Mode', 2000) &&
+             isOptionalNullableString(data, 'Data Consent', 50) &&
+             isOptionalDateOrString(data, 'Date Accomplished') &&
+             isOptionalNullableString(data, 'SK Data Collector', 150) &&
+             isOptionalDateOrString(data, 'Date Received') &&
+             isOptionalNullableString(data, 'uid', 128) &&
+             isOptionalDateOrString(data, 'updatedAt');
     }
 
-    // Validate youth / registrant full name field
-    function hasValidName(data) {
-      return ('Full Name' in data && data['Full Name'] is string && data['Full Name'].size() > 0 && data['Full Name'].size() <= 150) ||
-             ('fullName' in data && data['fullName'] is string && data['fullName'].size() > 0 && data['fullName'].size() <= 150) ||
-             ('name' in data && data['name'] is string && data['name'].size() > 0 && data['name'].size() <= 150);
-    }
-
-    // Domain validator for youth profile documents
     function isValidYouthProfile(data) {
-      return hasValidBarangay(data) &&
-             hasValidName(data) &&
-             (!('Sex' in data) || (data['Sex'] is string && data['Sex'].size() <= 30)) &&
-             (!('Civil Status' in data) || (data['Civil Status'] is string && data['Civil Status'].size() <= 50)) &&
-             (!('Contact Number' in data) || (data['Contact Number'] is string && data['Contact Number'].size() <= 50)) &&
-             (!('Sitio/Purok' in data) || (data['Sitio/Purok'] is string && data['Sitio/Purok'].size() <= 100)) &&
-             (!('Tribe' in data) || (data['Tribe'] is string && data['Tribe'].size() <= 100)) &&
-             (!('Educational Status' in data) || (data['Educational Status'] is string && data['Educational Status'].size() <= 100)) &&
-             (!('Employment Status' in data) || (data['Employment Status'] is string && data['Employment Status'].size() <= 100)) &&
-             (!('Youth Sector' in data) || (data['Youth Sector'] is string && data['Youth Sector'].size() <= 100)) &&
-             (!('Date of Birth' in data) || (data['Date of Birth'] is string || data['Date of Birth'] is timestamp)) &&
-             (!('ageBracket' in data) || (data.ageBracket is string && data.ageBracket.size() <= 50));
+      return data.keys().hasOnly([
+               'Timestamp', 'FormNo.', 'Barangay', 'Full Name', 'Nickname', 'Sex',
+               'Date of Birth', 'Age', 'calculatedAge', 'ageBracket', 'Place of Birth',
+               'Civil Status', 'Tribe', 'Citizenship', 'Religion', 'Sitio/Purok',
+               'Complete Address', 'Contact Number', 'Email Address', 'Educational Status',
+               'Highest Educational Attainment', 'School/Institution', 'Course/Strand',
+               'Employment Status', 'Nature of Work', 'Skills/Talents', 'Languages Spoken',
+               'Member of Youth Organization', 'Organizations', 'Leadership Position',
+               'Volunteer Activities', 'Areas of Interest', 'Youth Sector',
+               'Total Household Members', 'Household Income', 'Internet Access',
+               'Internet Connection Type', 'Preferred Announcement Mode', '5-Year Goals',
+               'Desired Programs', 'Participation Mode', 'Data Consent',
+               'Date Accomplished', 'SK Data Collector', 'Date Received',
+               'uid', 'approvedAt', 'updatedAt'
+             ]) &&
+             'Barangay' in data &&
+             data['Barangay'] is string &&
+             data['Barangay'].size() > 0 &&
+             data['Barangay'].size() <= 100 &&
+             'Full Name' in data &&
+             data['Full Name'] is string &&
+             data['Full Name'].size() > 0 &&
+             data['Full Name'].size() <= 150 &&
+             isOptionalDateOrString(data, 'approvedAt') &&
+             hasValidCommonSurveyFields(data);
     }
 
-    // Domain validator for public online intake submissions
     function isValidOnlineSubmission(data) {
-      return hasValidBarangay(data) &&
-             hasValidName(data) &&
-             (!('Contact Number' in data) || (data['Contact Number'] is string && data['Contact Number'].size() <= 50)) &&
-             (!('contactNumber' in data) || (data['contactNumber'] is string && data['contactNumber'].size() <= 50)) &&
-             (!('Sitio/Purok' in data) || (data['Sitio/Purok'] is string && data['Sitio/Purok'].size() <= 100)) &&
-             (!('sitio' in data) || (data['sitio'] is string && data['sitio'].size() <= 100));
+      return !data.keys().hasAny([
+               'approvedAt', 'role', 'status', 'isApproved', 'password', 'passwordHash'
+             ]) &&
+             data.keys().hasOnly([
+               'Timestamp', 'FormNo.', 'Barangay', 'Full Name', 'Nickname', 'Sex',
+               'Date of Birth', 'Age', 'calculatedAge', 'ageBracket', 'Place of Birth',
+               'Civil Status', 'Tribe', 'Citizenship', 'Religion', 'Sitio/Purok',
+               'Complete Address', 'Contact Number', 'Email Address', 'Educational Status',
+               'Highest Educational Attainment', 'School/Institution', 'Course/Strand',
+               'Employment Status', 'Nature of Work', 'Skills/Talents', 'Languages Spoken',
+               'Member of Youth Organization', 'Organizations', 'Leadership Position',
+               'Volunteer Activities', 'Areas of Interest', 'Youth Sector',
+               'Total Household Members', 'Household Income', 'Internet Access',
+               'Internet Connection Type', 'Preferred Announcement Mode', '5-Year Goals',
+               'Desired Programs', 'Participation Mode', 'Data Consent',
+               'Date Accomplished', 'SK Data Collector', 'Date Received',
+               'uid', 'updatedAt',
+               'barangay', 'fullName', 'contactNumber', 'sitio', 'dateOfBirth',
+               'sex', 'civilStatus', 'tribe', 'educationalStatus',
+               'highestEducationalAttainment', 'employmentStatus', 'youthSector',
+               'formNo', 'createdAt', 'submittedAt'
+             ]) &&
+             (('Barangay' in data && data['Barangay'] is string && data['Barangay'].size() > 0 && data['Barangay'].size() <= 100) ||
+              ('barangay' in data && data.barangay is string && data.barangay.size() > 0 && data.barangay.size() <= 100)) &&
+             (!('Barangay' in data) || (data['Barangay'] is string && data['Barangay'].size() > 0 && data['Barangay'].size() <= 100)) &&
+             (!('barangay' in data) || (data.barangay is string && data.barangay.size() > 0 && data.barangay.size() <= 100)) &&
+             (('Full Name' in data && data['Full Name'] is string && data['Full Name'].size() > 0 && data['Full Name'].size() <= 150) ||
+              ('fullName' in data && data.fullName is string && data.fullName.size() > 0 && data.fullName.size() <= 150)) &&
+             (!('Full Name' in data) || (data['Full Name'] is string && data['Full Name'].size() > 0 && data['Full Name'].size() <= 150)) &&
+             (!('fullName' in data) || (data.fullName is string && data.fullName.size() > 0 && data.fullName.size() <= 150)) &&
+             hasValidCommonSurveyFields(data) &&
+             isOptionalNullableString(data, 'contactNumber', 50) &&
+             isOptionalNullableString(data, 'sitio', 150) &&
+             isOptionalDateOrString(data, 'dateOfBirth') &&
+             isOptionalNullableString(data, 'sex', 50) &&
+             isOptionalNullableString(data, 'civilStatus', 50) &&
+             isOptionalNullableString(data, 'tribe', 100) &&
+             isOptionalNullableString(data, 'educationalStatus', 150) &&
+             isOptionalNullableString(data, 'highestEducationalAttainment', 150) &&
+             isOptionalNullableString(data, 'employmentStatus', 150) &&
+             isOptionalNullableString(data, 'youthSector', 2000) &&
+             isOptionalNullableString(data, 'formNo', 100) &&
+             isOptionalDateOrString(data, 'createdAt') &&
+             isOptionalDateOrString(data, 'submittedAt');
     }
 
-    // Domain validator for user documents
-    function isValidUser(data) {
-      return (!('username' in data) || (data.username is string && data.username.size() <= 100)) &&
-             (!('passwordHash' in data) || (data.passwordHash is string && data.passwordHash.size() <= 200)) &&
-             (!('password' in data) || (data.password is string && data.password.size() <= 200)) &&
-             (!('fullName' in data) || (data.fullName is string && data.fullName.size() <= 150)) &&
-             (!('contactNumber' in data) || (data.contactNumber is string && data.contactNumber.size() <= 50)) &&
-             (!('role' in data) || (data.role is string && data.role.size() <= 50)) &&
-             (!('barangay' in data) || (data.barangay is string && data.barangay.size() <= 100)) &&
-             (!('Barangay' in data) || (data.Barangay is string && data.Barangay.size() <= 100)) &&
-             (!('status' in data) || (data.status is string && data.status.size() <= 50)) &&
-             (!('isApproved' in data) || (data.isApproved is bool)) &&
-             (!('approvedBy' in data) || (data.approvedBy is string && data.approvedBy.size() <= 100)) &&
-             (!('approvedAt' in data) || (data.approvedAt is timestamp || data.approvedAt is string)) &&
-             (!('rejectedBy' in data) || (data.rejectedBy is string && data.rejectedBy.size() <= 100)) &&
-             (!('rejectedAt' in data) || (data.rejectedAt is timestamp || data.rejectedAt is string)) &&
-             (!('updatedAt' in data) || (data.updatedAt is timestamp || data.updatedAt is string)) &&
-             (!('createdAt' in data) || (data.createdAt is timestamp || data.createdAt is string)) &&
-             (!('email' in data) || (data.email is string && data.email.size() <= 150));
+    function isValidUserProfileFields(data) {
+      return isOptionalNullableString(data, 'fullName', 150) &&
+             isOptionalNullableString(data, 'displayName', 150) &&
+             isOptionalNullableString(data, 'contactNumber', 50) &&
+             isOptionalPhotoUrl(data, 'photoURL') &&
+             isOptionalDateOrString(data, 'updatedAt');
     }
 
-    // Domain validator for audit log entries
+    function isValidNewUser(data, userId) {
+      return data.keys().hasOnly([
+               'uid', 'username', 'email', 'fullName', 'displayName', 'photoURL',
+               'contactNumber', 'role', 'barangay', 'status', 'isApproved',
+               'authProvider', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasAll([
+               'uid', 'username', 'email', 'role', 'barangay',
+               'status', 'isApproved', 'authProvider'
+             ]) &&
+             data.uid is string &&
+             data.uid == userId &&
+             data.uid.size() <= 128 &&
+             data.username is string &&
+             data.username.size() > 0 &&
+             data.username.size() <= 100 &&
+             data.email is string &&
+             data.email.size() > 0 &&
+             data.email.size() <= 150 &&
+             data.role == 'Barangay User' &&
+             data.status == 'Pending' &&
+             data.isApproved == false &&
+             data.barangay is string &&
+             data.barangay.size() > 0 &&
+             data.barangay.size() <= 100 &&
+             data.barangay != 'All' &&
+             data.barangay != 'System Admin' &&
+             data.authProvider in ['google', 'password'] &&
+             isValidUserProfileFields(data) &&
+             isOptionalDateOrString(data, 'createdAt');
+    }
+
+    function isValidAdminUserUpdate(data) {
+      return !data.keys().hasAny(['password', 'passwordHash']) &&
+             data.keys().hasOnly([
+               'uid', 'username', 'email', 'fullName', 'displayName', 'photoURL',
+               'contactNumber', 'role', 'barangay', 'status', 'isApproved',
+               'authProvider', 'approvedBy', 'approvedAt', 'rejectedBy',
+               'rejectedAt', 'createdAt', 'updatedAt'
+             ]) &&
+             (!('uid' in data) || (data.uid is string && data.uid.size() > 0 && data.uid.size() <= 128)) &&
+             (!('uid' in resource.data) || !('uid' in data) || data.uid == resource.data.uid) &&
+             (!('username' in data) || (data.username is string && data.username.size() > 0 && data.username.size() <= 100)) &&
+             (!('email' in data) || (data.email is string && data.email.size() > 0 && data.email.size() <= 150)) &&
+             (!('role' in data) || data.role in ['Admin', 'Barangay User']) &&
+             (!('status' in data) || data.status in ['Pending', 'Approved', 'Rejected', 'Deactivated']) &&
+             (!('isApproved' in data) || data.isApproved is bool) &&
+             (!('barangay' in data) || (data.barangay is string && data.barangay.size() > 0 && data.barangay.size() <= 100)) &&
+             (!('authProvider' in data) || data.authProvider in ['google', 'password']) &&
+             isOptionalNullableString(data, 'approvedBy', 100) &&
+             isOptionalDateOrString(data, 'approvedAt') &&
+             isOptionalNullableString(data, 'rejectedBy', 100) &&
+             isOptionalDateOrString(data, 'rejectedAt') &&
+             isOptionalDateOrString(data, 'createdAt') &&
+             (!('createdAt' in resource.data) || !('createdAt' in data) || data.createdAt == resource.data.createdAt) &&
+             isValidUserProfileFields(data);
+    }
+
     function isValidAuditLog(data) {
-      return (!('action' in data) || (data.action is string && data.action.size() <= 50)) &&
-             (!('Action' in data) || (data.Action is string && data.Action.size() <= 50)) &&
-             (!('details' in data) || (data.details is string && data.details.size() <= 2000)) &&
-             (!('Details' in data) || (data.Details is string && data.Details.size() <= 2000)) &&
-             (!('barangay' in data) || (data.barangay is string && data.barangay.size() <= 100)) &&
-             (!('Barangay' in data) || (data.Barangay is string && data.Barangay.size() <= 100)) &&
-             (!('user' in data) || (data.user is string && data.user.size() <= 100)) &&
-             (!('User' in data) || (data.User is string && data.User.size() <= 100)) &&
-             (!('recordName' in data) || (data.recordName is string && data.recordName.size() <= 200)) &&
-             (!('timestamp' in data) || (data.timestamp is timestamp || data.timestamp is string));
+      return data.keys().hasOnly([
+               'action', 'recordName', 'details', 'barangay', 'user', 'timestamp'
+             ]) &&
+             data.keys().hasAll([
+               'action', 'recordName', 'details', 'barangay', 'user', 'timestamp'
+             ]) &&
+             data.action is string &&
+             data.action.size() > 0 &&
+             data.action.size() <= 50 &&
+             data.recordName is string &&
+             data.recordName.size() > 0 &&
+             data.recordName.size() <= 200 &&
+             data.details is string &&
+             data.details.size() <= 2000 &&
+             data.barangay is string &&
+             data.barangay.size() > 0 &&
+             data.barangay.size() <= 100 &&
+             data.user is string &&
+             data.user.size() > 0 &&
+             data.user.size() <= 100 &&
+             (data.timestamp is timestamp ||
+              (data.timestamp is string && data.timestamp.size() > 0 && data.timestamp.size() <= 100));
     }
 
-    // Domain validator for atomic sequence counters (Form Numbers)
     function isValidCounter(data) {
-      return ('lastSerial' in data) &&
-             (data.lastSerial is int || data.lastSerial is number) &&
+      return data.keys().hasOnly([
+               'lastSerial', 'barangay', 'Barangay', 'year', 'prefix', 'updatedAt', 'timestamp'
+             ]) &&
+             'lastSerial' in data &&
+             data.lastSerial is int &&
              data.lastSerial >= 0 &&
-             (!('barangay' in data) || (data.barangay is string && data.barangay.size() <= 100)) &&
-             (!('Barangay' in data) || (data.Barangay is string && data.Barangay.size() <= 100)) &&
-             (!('year' in data) || (data.year is string && data.year.size() <= 10) || (data.year is int || data.year is number)) &&
-             (!('prefix' in data) || (data.prefix is string && data.prefix.size() <= 50)) &&
-             (!('updatedAt' in data) || (data.updatedAt is timestamp || data.updatedAt is string)) &&
-             (!('timestamp' in data) || (data.timestamp is timestamp || data.timestamp is string));
+             isOptionalNullableString(data, 'barangay', 100) &&
+             isOptionalNullableString(data, 'Barangay', 100) &&
+             (!('year' in data) ||
+              data.year == null ||
+              (data.year is string && data.year.size() <= 10) ||
+              (data.year is int && data.year >= 2000 && data.year <= 2100)) &&
+             isOptionalNullableString(data, 'prefix', 50) &&
+             isOptionalDateOrString(data, 'updatedAt') &&
+             isOptionalDateOrString(data, 'timestamp');
     }
 
     // ===============================================================
     // 1. Master Collection: youth_profiles
     // ===============================================================
     match /youth_profiles/{profileId} {
-      // Read: Allow all users (supports both Firebase Auth and custom username/password session logins)
-      allow read: if true;
+      allow read: if isAdmin() ||
+                     (isApprovedUser() &&
+                      'barangay' in userData() &&
+                      resource.data.Barangay == userBarangay());
 
-      // Create: Allow if authenticated OR if payload passes valid youth profile & barangay validation
-      allow create: if isAuthenticated() || isValidYouthProfile(request.resource.data);
+      allow create: if isApprovedUser() &&
+                       isValidYouthProfile(request.resource.data) &&
+                       belongsToUserBarangay(request.resource.data.Barangay);
 
-      // Update: Allow if authenticated OR if updated payload passes youth profile & barangay validation
-      allow update: if isAuthenticated() || isValidYouthProfile(request.resource.data);
+      allow update: if isApprovedUser() &&
+                       isValidYouthProfile(request.resource.data) &&
+                       belongsToUserBarangay(resource.data.Barangay) &&
+                       belongsToUserBarangay(request.resource.data.Barangay);
 
-      // Delete: Allow authenticated users or all users during initial rollout
-      allow delete: if isAuthenticated() || true;
+      allow delete: if isApprovedUser() &&
+                       belongsToUserBarangay(resource.data.Barangay);
     }
 
     // ===============================================================
     // 2. Public Intake Collection: online_submissions (eProfiling)
     // ===============================================================
     match /online_submissions/{submissionId} {
-      // Public / unauthenticated self-registration: anyone can submit with valid required fields
       allow create: if isValidOnlineSubmission(request.resource.data);
-
-      // Allow intake reading, processing, and batch synchronization
-      allow read, delete: if isAuthenticated() || true;
-      allow update: if (isAuthenticated() || true) && isValidOnlineSubmission(request.resource.data);
+      allow read, delete: if isAdmin();
+      allow update: if isAdmin() && isValidOnlineSubmission(request.resource.data);
     }
 
     // ===============================================================
     // 3. User Profiles Collection: users
     // ===============================================================
     match /users/{userId} {
-      // Anyone can read user accounts to allow user lookup by username on login and admin dashboard management
-      allow read: if true;
+      allow read: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
 
-      // Anyone can create user accounts with validation for self-registration of accounts
-      allow create: if isValidUser(request.resource.data);
+      allow create: if isAuthenticated() &&
+                       request.auth.uid == userId &&
+                       isValidNewUser(request.resource.data, userId);
 
-      // Allow updates that conform to valid user schema (supports client-side session auth workflows like approvals)
-      allow update: if isValidUser(request.resource.data);
+      allow update: if (isAdmin() && isValidAdminUserUpdate(request.resource.data)) ||
+                       (isApprovedUser() &&
+                        request.auth.uid == userId &&
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                          'fullName', 'displayName', 'contactNumber', 'photoURL', 'updatedAt'
+                        ]) &&
+                        isValidUserProfileFields(request.resource.data));
 
-      // Allow delete for admin or during rollout
-      allow delete: if isAdmin() || true;
+      allow delete: if isAdmin() && request.auth.uid != userId;
     }
 
     // ===============================================================
-    // 4. System Audit Trail: audit_logs
+    // 4. System Audit Trail: audit_logs (Immutable)
     // ===============================================================
     match /audit_logs/{logId} {
-      // Read: Allow all users to inspect system audit trail and dashboard feeds
-      allow read: if true;
+      allow read: if isAdmin() ||
+                     (isApprovedUser() &&
+                      'barangay' in userData() &&
+                      resource.data.barangay == userBarangay());
 
-      // Create/Update: Allow if authenticated OR if payload conforms to valid audit log schema
-      allow create, update: if isAuthenticated() || isValidAuditLog(request.resource.data);
+      allow create: if isApprovedUser() &&
+                       isValidAuditLog(request.resource.data) &&
+                       belongsToUserBarangay(request.resource.data.barangay);
 
-      // Delete: Allow authenticated users or all users during initial rollout
-      allow delete: if isAuthenticated() || true;
+      allow update, delete: if false;
     }
 
     // ===============================================================
     // 5. Atomic Sequence Counters: counters
     // ===============================================================
     match /counters/{counterId} {
-      // Allow unauthenticated and authenticated clients to read and update
-      // so atomic transactions from public web forms (prof.js) can increment lastSerial
+      // Sequence numbers only (no PII); needed by public intake form (prof.js)
       allow read: if true;
-      allow create, update: if isValidCounter(request.resource.data);
+
+      allow create: if isValidCounter(request.resource.data) &&
+                       request.resource.data.lastSerial >= 0 &&
+                       request.resource.data.lastSerial <= 10;
+
+      allow update: if isValidCounter(request.resource.data) &&
+                       request.resource.data.lastSerial == resource.data.lastSerial + 1;
+
       allow delete: if isAdmin();
     }
 

@@ -137,8 +137,9 @@ function parseAndNormalizeCsvText(csvText) {
 
           if (!rawName || !rawBarangay) continue;
 
-          const sessionRole = sessionStorage.getItem('sk_user_role') || 'Barangay User';
-          const sessionBrgy = sessionStorage.getItem('sk_user_barangay') || '';
+          const authCtx = window.CURRENT_USER_CONTEXT || {};
+          const sessionRole = authCtx.role || 'Barangay User';
+          const sessionBrgy = authCtx.barangay || '';
           const effectiveBarangay = (sessionRole !== 'Admin' && sessionBrgy && sessionBrgy !== 'All')
             ? sessionBrgy
             : rawBarangay;
@@ -234,8 +235,9 @@ async function uploadRecordsToFirestore(records, onProgress) {
 
   // Record upload in system audit log
   try {
-    const currentUser = sessionStorage.getItem('sk_username') || sessionStorage.getItem('sk_user_barangay') || 'Admin';
-    const detectedBrgy = records[0]?.Barangay || 'Various';
+    const authCtx = window.CURRENT_USER_CONTEXT || {};
+    const currentUser = authCtx.username || authCtx.barangay || 'Admin';
+    const detectedBrgy = records[0]?.Barangay || authCtx.barangay || 'All';
     await db.collection('audit_logs').add({
       action: 'CSV_IMPORT',
       recordName: `Batch (${total} profiles)`,

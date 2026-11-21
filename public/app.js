@@ -3,14 +3,13 @@
 // Municipality of Malungon, Province of Sarangani
 // ===============================================================
 
-// --- AUTHENTICATION CHECK ---
-if (!sessionStorage.getItem('sk_auth_token')) {
-    window.location.href = 'login.html';
-}
-
-const USER_ROLE = sessionStorage.getItem('sk_user_role') || 'Barangay User';
-const USER_BRGY = sessionStorage.getItem('sk_user_barangay') || '';
-const USERNAME = sessionStorage.getItem('sk_username') || 'User';
+// --- AUTHENTICATION CHECK (VERIFIED VIA FIREBASE AUTH + FIRESTORE) ---
+let USER_ROLE = 'Barangay User';
+let USER_BRGY = '';
+let USERNAME = 'User';
+let CURRENT_UID = null;
+let authVerified = false;
+let appBooted = false;
 const APP_VERSION = 'v2.0.0';
 let syncToastShown = false;
 
@@ -31,51 +30,78 @@ const safeGet = (obj, searchKey) => {
 };
 
 function logout() {
-    sessionStorage.clear();
-    localStorage.clear();
+    authVerified = false;
+    CURRENT_UID = null;
+    window.CURRENT_USER_CONTEXT = null;
+    ['sk_auth_token', 'sk_user_role', 'sk_user_barangay', 'sk_username', 'sk_status'].forEach(k => {
+        sessionStorage.removeItem(k);
+    });
     if (typeof auth !== 'undefined' && auth.signOut) {
-        auth.signOut().catch(() => {});
+        auth.signOut().catch(() => {}).finally(() => {
+            window.location.replace('login.html');
+        });
+    } else {
+        window.location.replace('login.html');
     }
-    window.location.replace('login.html');
 }
 
-// Monitor Firebase Auth session state
+function maybeBootDashboard() {
+    if (authVerified && googleChartsLoaded && !appBooted) {
+        appBooted = true;
+        initializeApp();
+    }
+}
+
+// Authoritative Firebase Auth + Firestore approval verification
 if (typeof auth !== 'undefined' && auth.onAuthStateChanged) {
     auth.onAuthStateChanged(async (firebaseUser) => {
-        const token = sessionStorage.getItem('sk_auth_token');
-        if (token === 'ADMIN_SESSION_TOKEN') {
-            // Local emergency administrator bootstrap session
+        if (!firebaseUser) {
+            window.location.replace('login.html');
             return;
         }
 
-        if (firebaseUser) {
-            try {
-                let docSnap = await db.collection('users').doc(firebaseUser.uid).get();
-                let userData = null;
-                if (docSnap.exists) {
-                    userData = docSnap.data();
-                } else {
-                    const snap = await db.collection('users').where('email', '==', (firebaseUser.email || '').toLowerCase()).get();
-                    if (!snap.empty) {
-                        userData = snap.docs[0].data();
-                    }
-                }
-
-                if (userData) {
-                    const status = userData.status || 'Approved';
-                    if (status !== 'Approved') {
-                        console.warn('[Auth Monitor] Account status is ' + status + '. Signing out.');
-                        logout();
-                        return;
-                    }
-                }
-            } catch (err) {
-                console.warn('[Auth Monitor] Status check warning:', err);
+        try {
+            const docSnap = await db.collection('users').doc(firebaseUser.uid).get();
+            if (!docSnap.exists) {
+                console.warn('[Auth Monitor] User profile missing in Firestore. Signing out.');
+                logout();
+                return;
             }
-        } else if (!token) {
-            window.location.replace('login.html');
+
+            const userData = docSnap.data();
+            // Fail-closed: require explicit Approved status and isApproved === true
+            if (userData.status !== 'Approved' || userData.isApproved !== true) {
+                console.warn('[Auth Monitor] Account status is ' + userData.status + '. Signing out.');
+                logout();
+                return;
+            }
+
+            USER_ROLE = userData.role === 'Admin' ? 'Admin' : 'Barangay User';
+            USER_BRGY = USER_ROLE === 'Admin' ? 'All' : (userData.barangay || userData.Barangay || '');
+            USERNAME = userData.username || userData.email || firebaseUser.email || 'User';
+            CURRENT_UID = firebaseUser.uid;
+            window.CURRENT_USER_CONTEXT = {
+                uid: CURRENT_UID,
+                role: USER_ROLE,
+                barangay: USER_BRGY,
+                username: USERNAME
+            };
+
+            if (USER_ROLE !== 'Admin' && !USER_BRGY) {
+                console.warn('[Auth Monitor] Barangay user missing assigned jurisdiction. Signing out.');
+                logout();
+                return;
+            }
+
+            authVerified = true;
+            maybeBootDashboard();
+        } catch (err) {
+            console.error('[Auth Monitor] Verification failed:', err);
+            logout();
         }
     });
+} else {
+    window.location.replace('login.html');
 }
 
 // --- Global State ---
@@ -106,7 +132,7 @@ setInterval(() => {
 google.charts.load('current', { 'packages': ['corechart'] });
 google.charts.setOnLoadCallback(() => {
     googleChartsLoaded = true;
-    initializeApp();
+    maybeBootDashboard();
 });
 
 // Setup drag and drop events when DOM is loaded
@@ -142,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- CORE DATA ENGINE (FIRESTORE) ---
 
 async function initializeApp() {
+    if (!authVerified) return;
     const tbody = document.getElementById('registryTableBody');
     if (tbody) {
         tbody.innerHTML = Array(5).fill('').map(() => `<tr><td colspan="8" class="p-3"><div class="skeleton skeleton-text w-100"></div></td></tr>`).join('');
@@ -160,6 +187,15 @@ async function initializeApp() {
         snapshot.forEach(doc => {
             const data = doc.data();
             data.uid = doc.id;
+            // Recompute age dynamically from Date of Birth so age brackets stay current
+            const dob = data['Date of Birth'];
+            if (dob) {
+                const liveAge = calculateAgeFromDob(dob);
+                if (liveAge !== null) {
+                    data.calculatedAge = liveAge;
+                    data.ageBracket = getAgeBracketLabel(liveAge);
+                }
+            }
             records.push(data);
         });
 
@@ -215,13 +251,21 @@ function applyRoleBasedUI() {
 
         const filterBrgy = document.getElementById('barangayFilter');
         if (filterBrgy) {
-            filterBrgy.innerHTML = `<option value="${USER_BRGY}">${USER_BRGY}</option>`;
+            filterBrgy.innerHTML = '';
+            const opt = document.createElement('option');
+            opt.value = USER_BRGY;
+            opt.textContent = USER_BRGY;
+            filterBrgy.appendChild(opt);
             filterBrgy.disabled = true;
         }
 
         const reportBrgy = document.getElementById('reportBarangaySelect');
         if (reportBrgy) {
-            reportBrgy.innerHTML = `<option value="${USER_BRGY}">${USER_BRGY}</option>`;
+            reportBrgy.innerHTML = '';
+            const opt = document.createElement('option');
+            opt.value = USER_BRGY;
+            opt.textContent = USER_BRGY;
+            reportBrgy.appendChild(opt);
             reportBrgy.disabled = true;
         }
 
@@ -586,14 +630,27 @@ function renderTable() {
             <td class="small text-secondary">${escapeHtml(row['Civil Status'] || '-')}</td>
             <td class="text-end">
                 <div class="btn-group">
-                    <button class="btn btn-sm btn-light border text-primary" onclick="openViewModal('${escapeHtml(row.uid)}')" title="View Profile"><i class="bi bi-eye"></i></button>
-                    <button class="btn btn-sm btn-light border text-warning" onclick="openEditModal('${escapeHtml(row.uid)}')" title="Edit Record"><i class="bi bi-pencil"></i></button>
-                    <button class="btn btn-sm btn-light border text-danger" onclick="confirmDelete('${escapeHtml(row.uid)}')" title="Delete Record"><i class="bi bi-trash"></i></button>
+                    <button type="button" class="btn btn-sm btn-light border text-primary" data-action="view" data-uid="${escapeHtml(row.uid)}" title="View Profile"><i class="bi bi-eye"></i></button>
+                    <button type="button" class="btn btn-sm btn-light border text-warning" data-action="edit" data-uid="${escapeHtml(row.uid)}" title="Edit Record"><i class="bi bi-pencil"></i></button>
+                    <button type="button" class="btn btn-sm btn-light border text-danger" data-action="delete" data-uid="${escapeHtml(row.uid)}" title="Delete Record"><i class="bi bi-trash"></i></button>
                 </div>
             </td>
         `;
         tbody.appendChild(tr);
     });
+
+    if (!tbody.dataset.delegatedBound) {
+        tbody.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action][data-uid]');
+            if (!btn) return;
+            const uid = btn.dataset.uid;
+            const action = btn.dataset.action;
+            if (action === 'view') openViewModal(uid);
+            else if (action === 'edit') openEditModal(uid);
+            else if (action === 'delete') confirmDelete(uid);
+        });
+        tbody.dataset.delegatedBound = 'true';
+    }
 
     document.getElementById('startIdx').innerText = start + 1;
     document.getElementById('endIdx').innerText = Math.min(end, filteredTableData.length);
@@ -777,7 +834,7 @@ function openEditModal(uid) {
         if (field.type === 'select') {
             input = `<select class="form-select form-control-modern" data-field-key="${escapeHtml(field.key)}" id="${cleanId}">`;
             field.options.forEach(opt => {
-                input += `<option value="${opt}" ${data[field.key] === opt ? 'selected' : ''}>${opt}</option>`;
+                input += `<option value="${escapeHtml(opt)}" ${data[field.key] === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`;
             });
             input += '</select>';
         } else {
@@ -803,6 +860,7 @@ async function saveEditedRecord() {
     if (USER_ROLE !== 'Admin') {
         updatedData['Barangay'] = USER_BRGY;
     }
+    updatedData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
 
     if (updatedData['Date of Birth']) {
         const calculatedAge = calculateAgeFromDob(updatedData['Date of Birth']);
@@ -820,8 +878,8 @@ async function saveEditedRecord() {
         await db.collection('audit_logs').add({
             action: 'EDIT',
             recordName: updatedData['Full Name'] || 'Unknown',
-            details: `Profile updated for ${updatedData['Full Name']}`,
-            barangay: updatedData['Barangay'] || USER_BRGY,
+            details: `Profile updated for ${updatedData['Full Name'] || 'Unknown'}`,
+            barangay: updatedData['Barangay'] || USER_BRGY || 'All',
             user: USERNAME,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -852,7 +910,7 @@ function confirmDelete(uid) {
                     action: 'DELETE',
                     recordName: target ? target['Full Name'] : 'Unknown',
                     details: 'Record was permanently deleted from Firestore.',
-                    barangay: target ? target['Barangay'] : USER_BRGY,
+                    barangay: target ? (target['Barangay'] || 'All') : (USER_BRGY || 'All'),
                     user: USERNAME,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -1052,6 +1110,48 @@ async function checkPendingSync() {
 
 // --- ONLINE SUBMISSIONS SYNC (eProfiling) ---
 
+function normalizeSubmissionForMaster(doc) {
+    const raw = doc.data() || {};
+    const keyMap = {
+        barangay: 'Barangay',
+        fullName: 'Full Name',
+        name: 'Full Name',
+        contactNumber: 'Contact Number',
+        sitio: 'Sitio/Purok',
+        sex: 'Sex',
+        dateOfBirth: 'Date of Birth',
+        civilStatus: 'Civil Status',
+        tribe: 'Tribe',
+        educationalStatus: 'Educational Status',
+        highestEducationalAttainment: 'Highest Educational Attainment',
+        employmentStatus: 'Employment Status',
+        youthSector: 'Youth Sector',
+        formNo: 'FormNo.'
+    };
+    const ignoredKeys = new Set(['createdAt', 'submittedAt']);
+    const normalized = {};
+
+    Object.keys(raw).forEach(k => {
+        if (ignoredKeys.has(k)) return;
+        const targetKey = keyMap[k] || k;
+        if (normalized[targetKey] === undefined || normalized[targetKey] === '') {
+            normalized[targetKey] = raw[k];
+        }
+    });
+
+    if (normalized['Date of Birth']) {
+        const age = calculateAgeFromDob(normalized['Date of Birth']);
+        if (age !== null) {
+            normalized.calculatedAge = age;
+            normalized.ageBracket = getAgeBracketLabel(age);
+        }
+    }
+
+    normalized.uid = doc.id;
+    normalized.approvedAt = firebase.firestore.FieldValue.serverTimestamp();
+    return normalized;
+}
+
 async function triggerWebSync() {
     if (USER_ROLE !== 'Admin') {
         Swal.fire('Access Denied', 'Only the System Admin can sync web forms.', 'error');
@@ -1080,15 +1180,19 @@ async function triggerWebSync() {
             if (result.isConfirmed) {
                 Swal.fire({ title: 'Merging into Master Registry...', didOpen: () => Swal.showLoading() });
 
-                const batch = db.batch();
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const masterRef = db.collection('youth_profiles').doc(doc.id);
-                    batch.set(masterRef, { ...data, approvedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
-                    batch.delete(doc.ref);
-                });
-
-                await batch.commit();
+                // Chunk into 200 docs (400 ops) per batch to stay under Firestore's 500-op batch limit
+                const docs = snap.docs;
+                const CHUNK_SIZE = 200;
+                for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
+                    const chunk = docs.slice(i, i + CHUNK_SIZE);
+                    const batch = db.batch();
+                    chunk.forEach(doc => {
+                        const masterRef = db.collection('youth_profiles').doc(doc.id);
+                        batch.set(masterRef, normalizeSubmissionForMaster(doc), { merge: true });
+                        batch.delete(doc.ref);
+                    });
+                    await batch.commit();
+                }
 
                 await db.collection('audit_logs').add({
                     action: 'SYNC',
@@ -1447,31 +1551,32 @@ function renderUsersTable(users) {
         const contactInfo = contactDetails.length > 0 ? contactDetails.map(escapeHtml).join(' &bull; ') : '<span class="text-muted fst-italic">Not specified</span>';
 
         let actionsHtml = '<div class="btn-group btn-group-sm">';
+        const brgyVal = u.barangay || '';
 
         if (status === 'Pending') {
             actionsHtml += `
-                <button type="button" class="btn btn-sm btn-success" onclick="approveUser('${escapeHtml(u.id)}', '${escapeHtml(userDisplayName)}', '${escapeHtml(u.barangay || '')}')" title="Approve Account">
+                <button type="button" class="btn btn-sm btn-success" data-user-action="approve" data-user-id="${escapeHtml(u.id)}" data-username="${escapeHtml(userDisplayName)}" data-barangay="${escapeHtml(brgyVal)}" title="Approve Account">
                     <i class="bi bi-check-lg me-1"></i>Approve
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-danger" onclick="rejectUser('${escapeHtml(u.id)}', '${escapeHtml(userDisplayName)}', '${escapeHtml(u.barangay || '')}')" title="Reject Request">
+                <button type="button" class="btn btn-sm btn-outline-danger" data-user-action="reject" data-user-id="${escapeHtml(u.id)}" data-username="${escapeHtml(userDisplayName)}" data-barangay="${escapeHtml(brgyVal)}" title="Reject Request">
                     <i class="bi bi-x-lg me-1"></i>Reject
                 </button>
             `;
         } else if (status === 'Approved') {
             actionsHtml += `
-                <button type="button" class="btn btn-sm btn-light border text-warning" onclick="toggleUserDeactivate('${escapeHtml(u.id)}', '${escapeHtml(userDisplayName)}', 'Approved')" title="Deactivate User">
+                <button type="button" class="btn btn-sm btn-light border text-warning" data-user-action="deactivate" data-user-id="${escapeHtml(u.id)}" data-username="${escapeHtml(userDisplayName)}" title="Deactivate User">
                     <i class="bi bi-pause-circle"></i> Deactivate
                 </button>
-                <button type="button" class="btn btn-sm btn-light border text-danger" onclick="deleteUserAccount('${escapeHtml(u.id)}', '${escapeHtml(userDisplayName)}')" title="Delete User">
+                <button type="button" class="btn btn-sm btn-light border text-danger" data-user-action="delete" data-user-id="${escapeHtml(u.id)}" data-username="${escapeHtml(userDisplayName)}" title="Delete User">
                     <i class="bi bi-trash"></i>
                 </button>
             `;
         } else if (status === 'Rejected' || status === 'Deactivated') {
             actionsHtml += `
-                <button type="button" class="btn btn-sm btn-outline-success" onclick="approveUser('${escapeHtml(u.id)}', '${escapeHtml(userDisplayName)}', '${escapeHtml(u.barangay || '')}')" title="Reactivate & Approve">
+                <button type="button" class="btn btn-sm btn-outline-success" data-user-action="approve" data-user-id="${escapeHtml(u.id)}" data-username="${escapeHtml(userDisplayName)}" data-barangay="${escapeHtml(brgyVal)}" title="Reactivate & Approve">
                     <i class="bi bi-check2-circle me-1"></i>Reactivate
                 </button>
-                <button type="button" class="btn btn-sm btn-light border text-danger" onclick="deleteUserAccount('${escapeHtml(u.id)}', '${escapeHtml(userDisplayName)}')" title="Delete User">
+                <button type="button" class="btn btn-sm btn-light border text-danger" data-user-action="delete" data-user-id="${escapeHtml(u.id)}" data-username="${escapeHtml(userDisplayName)}" title="Delete User">
                     <i class="bi bi-trash"></i>
                 </button>
             `;
@@ -1490,6 +1595,22 @@ function renderUsersTable(users) {
     });
 
     tbody.innerHTML = html;
+
+    if (!tbody.dataset.delegatedBound) {
+        tbody.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-user-action][data-user-id]');
+            if (!btn) return;
+            const action = btn.dataset.userAction;
+            const userId = btn.dataset.userId;
+            const uname = btn.dataset.username || 'User';
+            const brgy = btn.dataset.barangay || '';
+            if (action === 'approve') approveUser(userId, uname, brgy);
+            else if (action === 'reject') rejectUser(userId, uname, brgy);
+            else if (action === 'deactivate') toggleUserDeactivate(userId, uname, 'Approved');
+            else if (action === 'delete') deleteUserAccount(userId, uname);
+        });
+        tbody.dataset.delegatedBound = 'true';
+    }
 }
 
 async function approveUser(userId, username, barangay) {
@@ -1512,7 +1633,9 @@ async function approveUser(userId, username, barangay) {
                 status: 'Approved',
                 isApproved: true,
                 approvedBy: USERNAME,
-                approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+                approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                password: firebase.firestore.FieldValue.delete(),
+                passwordHash: firebase.firestore.FieldValue.delete()
             }, { merge: true });
 
             await db.collection('audit_logs').add({
@@ -1552,7 +1675,9 @@ async function rejectUser(userId, username, barangay) {
                 status: 'Rejected',
                 isApproved: false,
                 rejectedBy: USERNAME,
-                rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+                rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                password: firebase.firestore.FieldValue.delete(),
+                passwordHash: firebase.firestore.FieldValue.delete()
             }, { merge: true });
 
             await db.collection('audit_logs').add({
@@ -1594,7 +1719,9 @@ async function toggleUserDeactivate(userId, username, currentStatus) {
             await db.collection('users').doc(userId).set({
                 status: newStatus,
                 isApproved: (newStatus === 'Approved'),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                password: firebase.firestore.FieldValue.delete(),
+                passwordHash: firebase.firestore.FieldValue.delete()
             }, { merge: true });
 
             await db.collection('audit_logs').add({
@@ -1616,6 +1743,10 @@ async function toggleUserDeactivate(userId, username, currentStatus) {
 
 async function deleteUserAccount(userId, username) {
     if (USER_ROLE !== 'Admin') return;
+    if (userId === CURRENT_UID) {
+        Swal.fire('Action Blocked', 'You cannot delete your own active administrator account.', 'warning');
+        return;
+    }
 
     const result = await Swal.fire({
         title: 'Delete Account?',

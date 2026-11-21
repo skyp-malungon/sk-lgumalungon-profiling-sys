@@ -760,10 +760,10 @@
 
                     <form id="loginForm" onsubmit="handleLogin(event)">
                         <div class="modern-field-group">
-                            <label for="loginUser">Username</label>
+                            <label for="loginUser">Username or Email</label>
                             <div class="input-shell">
                                 <span class="field-icon"><i class="bi bi-person" aria-hidden="true"></i></span>
-                                <input type="text" id="loginUser" autocomplete="username" placeholder="Enter your username" required autofocus>
+                                <input type="text" id="loginUser" autocomplete="username" placeholder="Enter your username or email" required autofocus>
                             </div>
                         </div>
 
@@ -827,9 +827,8 @@
                             <label for="regBarangay">Jurisdiction / Barangay</label>
                             <div class="input-shell">
                                 <span class="field-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span>
-                                <select id="regBarangay" required onchange="toggleMasterKey()">
+                                <select id="regBarangay" required>
                                     <option value="" disabled selected>Select your Barangay</option>
-                                    <option value="System Admin" class="text-primary fw-bold">🌟 System Admin (Municipal)</option>
                                     <option value="Alkikan">Alkikan</option>
                                     <option value="Ampon">Ampon</option>
                                     <option value="Atlae">Atlae</option>
@@ -865,15 +864,6 @@
                             </div>
                         </div>
 
-                        <!-- System Admin Master Key Verification (Conditional) -->
-                        <div class="modern-field-group" id="masterKeySection" style="display: none;">
-                            <label for="regMasterKey" class="text-danger fw-bold">Default Admin Password</label>
-                            <div class="input-shell" style="border-color: #fca5a5;">
-                                <span class="field-icon text-danger"><i class="bi bi-key-fill" aria-hidden="true"></i></span>
-                                <input type="password" id="regMasterKey" placeholder="Required for Municipal Admin creation">
-                            </div>
-                        </div>
-
                         <!-- Applicant Identity Information -->
                         <div class="row g-2 mb-2">
                             <div class="col-sm-6">
@@ -900,7 +890,7 @@
                             <label for="regUser">Desired Username</label>
                             <div class="input-shell">
                                 <span class="field-icon"><i class="bi bi-at" aria-hidden="true"></i></span>
-                                <input type="text" id="regUser" autocomplete="username" placeholder="Choose a username" required>
+                                <input type="text" id="regUser" autocomplete="username" minlength="3" maxlength="30" pattern="[a-zA-Z0-9._-]+" placeholder="Choose a username (3-30 chars)" required>
                             </div>
                         </div>
 
@@ -908,7 +898,7 @@
                             <label for="regPass">Desired Password</label>
                             <div class="input-shell">
                                 <span class="field-icon"><i class="bi bi-shield-lock" aria-hidden="true"></i></span>
-                                <input type="password" id="regPass" autocomplete="new-password" placeholder="Choose a secure password" required>
+                                <input type="password" id="regPass" autocomplete="new-password" minlength="8" placeholder="Minimum 8 characters" required>
                                 <button class="btn-eye-toggle" type="button" onclick="toggleVisibility('regPass', this)" aria-label="Show password">
                                     <i class="bi bi-eye" aria-hidden="true"></i>
                                 </button>
@@ -940,10 +930,25 @@
     </main>
 
     <script>
-        // Redirect to dashboard if session token already active
-        if (sessionStorage.getItem('sk_auth_token')) {
-            window.location.replace('index.html');
-        }
+        let isAuthFlowActive = false;
+
+        // Redirect to dashboard only when Firebase Auth session is verified & approved
+        auth.onAuthStateChanged(async (firebaseUser) => {
+            if (isAuthFlowActive || !firebaseUser) return;
+            try {
+                const snap = await db.collection('users').doc(firebaseUser.uid).get();
+                if (snap.exists) {
+                    const data = snap.data();
+                    if (data.status === 'Approved' && data.isApproved === true) {
+                        window.location.replace('index.html');
+                        return;
+                    }
+                }
+                await auth.signOut();
+            } catch (err) {
+                console.warn('[Auth Check]', err);
+            }
+        });
 
         function escapeHtml(str) {
             if (str === null || str === undefined) return '';
@@ -994,27 +999,38 @@
             }
         }
 
-        function toggleMasterKey() {
-            const brgy = document.getElementById('regBarangay').value;
-            const mkSection = document.getElementById('masterKeySection');
-            const masterInput = document.getElementById('regMasterKey');
-            if (brgy === 'System Admin') {
-                mkSection.style.display = 'block';
-                masterInput.required = true;
-            } else {
-                mkSection.style.display = 'none';
-                masterInput.required = false;
-                masterInput.value = '';
+        function checkApprovalStatusAndNotify(userData, displayIdentity) {
+            const status = userData?.status;
+            if (status === 'Approved' && userData?.isApproved === true) {
+                return true;
             }
-        }
-
-        const MASTER_ADMIN_HASH = '45121f15004d6f25f98f81c8d7fb2368a28650fdb7c4f07d0ba818dd1d1bb3eb';
-
-        async function hashPassword(plainText) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(plainText + '_sk_malungon_salt_2026');
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+            if (status === 'Pending') {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Account Pending Approval',
+                    html: `<p class="mb-2">Your account (<strong>${escapeHtml(displayIdentity)}</strong>) for <strong>${escapeHtml(userData.barangay ? 'Barangay ' + userData.barangay : 'SK Council')}</strong> has been registered and is currently awaiting approval by the Municipal Admin.</p><p class="text-muted small mb-0">Please coordinate with the SK Federation Office to verify and activate your account.</p>`,
+                    confirmButtonColor: '#2563eb'
+                });
+                return false;
+            }
+            if (status === 'Rejected') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Registration Declined',
+                    text: 'This account registration request was declined by the administrator. Please contact the SK Federation Office for details.',
+                    confirmButtonColor: '#ef4444'
+                });
+                return false;
+            }
+            Swal.fire({
+                icon: 'warning',
+                title: status === 'Deactivated' ? 'Account Deactivated' : 'Access Not Authorized',
+                text: status === 'Deactivated'
+                    ? 'This account has been deactivated. Please contact the Municipal Administrator.'
+                    : 'Your account is not approved for dashboard access. Please contact the Municipal Administrator.',
+                confirmButtonColor: '#f59e0b'
+            });
+            return false;
         }
 
         // ===============================================================
@@ -1028,6 +1044,7 @@
                 if (regGoogleBtn) regGoogleBtn.disabled = state;
             };
 
+            isAuthFlowActive = true;
             try {
                 setButtonsDisabled(true);
                 const provider = new firebase.auth.GoogleAuthProvider();
@@ -1037,63 +1054,16 @@
                 const user = result.user;
                 if (!user) return;
 
-                // 1. Check if user profile exists in Firestore (by UID first, then email fallback)
-                let userDocSnap = await db.collection('users').doc(user.uid).get();
-                let existingUser = null;
+                // 1. Check if user profile exists in Firestore strictly by UID
+                const userDocSnap = await db.collection('users').doc(user.uid).get();
 
+                // 2. Existing User: Fail-closed approval check
                 if (userDocSnap.exists) {
-                    existingUser = { id: userDocSnap.id, ...userDocSnap.data() };
-                } else {
-                    const emailSnap = await db.collection('users').where('email', '==', user.email.toLowerCase()).get();
-                    if (!emailSnap.empty) {
-                        const doc = emailSnap.docs[0];
-                        existingUser = { id: doc.id, ...doc.data() };
-                    }
-                }
-
-                // 2. Existing User: Check Approval Status
-                if (existingUser) {
-                    const userStatus = existingUser.status || 'Approved';
-
-                    if (userStatus === 'Pending') {
+                    const existingUser = userDocSnap.data();
+                    if (!checkApprovalStatusAndNotify(existingUser, user.email)) {
                         await auth.signOut();
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Account Pending Approval',
-                            html: `<p class="mb-2">Your Google account (<strong>${escapeHtml(user.email)}</strong>) for <strong>${escapeHtml(existingUser.barangay ? 'Barangay ' + existingUser.barangay : 'SK Council')}</strong> has been registered and is currently awaiting approval by the Municipal Admin.</p><p class="text-muted small mb-0">Please coordinate with the SK Federation Office to verify and activate your account.</p>`,
-                            confirmButtonColor: '#2563eb'
-                        });
                         return;
                     }
-
-                    if (userStatus === 'Rejected') {
-                        await auth.signOut();
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Registration Declined',
-                            text: 'This account registration request was declined by the administrator. Please contact the SK Federation Office for details.',
-                            confirmButtonColor: '#ef4444'
-                        });
-                        return;
-                    }
-
-                    if (userStatus === 'Deactivated') {
-                        await auth.signOut();
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Account Deactivated',
-                            text: 'This account has been deactivated. Please contact the Municipal Administrator.',
-                            confirmButtonColor: '#f59e0b'
-                        });
-                        return;
-                    }
-
-                    // Approved user: Grant session access
-                    sessionStorage.setItem('sk_auth_token', user.uid);
-                    sessionStorage.setItem('sk_user_role', existingUser.role || 'Barangay User');
-                    sessionStorage.setItem('sk_user_barangay', existingUser.barangay || existingUser.Barangay || '');
-                    sessionStorage.setItem('sk_username', existingUser.username || user.displayName || user.email);
-                    sessionStorage.setItem('sk_status', userStatus);
                     window.location.href = 'index.html';
                     return;
                 }
@@ -1157,15 +1127,15 @@
                 }
 
                 const { barangay, contactNumber } = promptResult.value;
-                const username = (user.email.split('@')[0] || 'user').toLowerCase();
+                const username = (user.email.split('@')[0] || 'user').toLowerCase().replace(/[^a-z0-9._-]/g, '');
 
-                // 4. Save User Profile to Firestore (status: Pending)
+                // 4. Save User Profile to Firestore (strictly Barangay User, Pending)
                 await db.collection('users').doc(user.uid).set({
                     uid: user.uid,
-                    username: username,
+                    username: username || 'user',
                     email: user.email.toLowerCase(),
-                    fullName: user.displayName || username,
-                    displayName: user.displayName || username,
+                    fullName: user.displayName || username || 'User',
+                    displayName: user.displayName || username || 'User',
                     photoURL: user.photoURL || '',
                     barangay: barangay,
                     contactNumber: contactNumber || '',
@@ -1177,21 +1147,7 @@
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                // 5. System Audit Trail
-                try {
-                    await db.collection('audit_logs').add({
-                        action: 'REGISTER_GOOGLE',
-                        recordName: user.displayName || user.email,
-                        details: `Google account registered for Barangay ${barangay} (Pending Admin Approval)`,
-                        barangay: barangay,
-                        user: user.email,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                } catch (logErr) {
-                    console.warn('[Audit Log Warning]', logErr);
-                }
-
-                // 6. Immediately sign out to prevent unauthorized dashboard entry
+                // 5. Immediately sign out to prevent unauthorized session retention
                 await auth.signOut();
 
                 Swal.fire({
@@ -1204,6 +1160,7 @@
 
             } catch (err) {
                 console.error('[Google Auth Error]', err);
+                await auth.signOut().catch(() => {});
                 if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
                     Swal.fire({
                         icon: 'error',
@@ -1213,12 +1170,13 @@
                     });
                 }
             } finally {
+                isAuthFlowActive = false;
                 setButtonsDisabled(false);
             }
         }
 
         // ===============================================================
-        // USERNAME / PASSWORD SIGN-IN HANDLER
+        // USERNAME / EMAIL & PASSWORD SIGN-IN HANDLER
         // ===============================================================
         async function handleLogin(e) {
             e.preventDefault();
@@ -1228,214 +1186,65 @@
             btn.disabled = true;
 
             const inputUser = document.getElementById('loginUser').value.trim();
-            const inputPass = document.getElementById('loginPass').value.trim();
+            const inputPass = document.getElementById('loginPass').value;
 
+            isAuthFlowActive = true;
             try {
-                const inputHash = await hashPassword(inputPass);
+                const loginEmail = inputUser.includes('@')
+                    ? inputUser.toLowerCase()
+                    : `${inputUser.toLowerCase()}@sk-malungon.gov.ph`;
 
-                // 1. Master Admin Hardcoded Fallback / Bootstrap (Hashed verification)
-                if (inputUser.toLowerCase() === 'admin' && inputHash === MASTER_ADMIN_HASH) {
-                    sessionStorage.setItem('sk_auth_token', 'ADMIN_SESSION_TOKEN');
-                    sessionStorage.setItem('sk_user_role', 'Admin');
-                    sessionStorage.setItem('sk_user_barangay', 'All');
-                    sessionStorage.setItem('sk_username', 'admin');
-                    sessionStorage.setItem('sk_status', 'Approved');
-                    window.location.href = 'index.html';
-                    return;
-                }
+                const userCred = await auth.signInWithEmailAndPassword(loginEmail, inputPass);
+                const authUser = userCred.user;
 
-                // 2. Synthetic email mapping for Firebase Auth
-                const syntheticEmail = inputUser.includes('@') ? inputUser.toLowerCase() : `${inputUser.toLowerCase()}@sk-malungon.gov.ph`;
-
-                let firebaseAuthSuccess = false;
-                let authUser = null;
-
-                try {
-                    const userCred = await auth.signInWithEmailAndPassword(syntheticEmail, inputPass);
-                    authUser = userCred.user;
-                    firebaseAuthSuccess = true;
-                } catch (authErr) {
-                    console.log('[Firebase Auth] Not in Auth or password mismatch:', authErr.code);
-                }
-
-                // 3. If Firebase Auth succeeded, retrieve user document from Firestore
-                if (firebaseAuthSuccess && authUser) {
-                    let docSnap = await db.collection('users').doc(authUser.uid).get();
-                    let activeUser = null;
-                    if (docSnap.exists) {
-                        activeUser = { id: docSnap.id, ...docSnap.data() };
-                    } else {
-                        const querySnap = await db.collection('users').where('username', '==', inputUser.toLowerCase()).get();
-                        if (!querySnap.empty) {
-                            const doc = querySnap.docs[0];
-                            activeUser = { id: doc.id, ...doc.data() };
-                        }
-                    }
-
-                    if (!activeUser) {
-                        await auth.signOut();
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Account Record Not Found',
-                            text: 'Your user profile could not be found. Please contact the administrator.',
-                            confirmButtonColor: '#2563eb'
-                        });
-                        return;
-                    }
-
-                    // Check approval status
-                    const userStatus = activeUser.status || 'Approved';
-                    if (userStatus === 'Pending') {
-                        await auth.signOut();
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Account Pending Approval',
-                            html: `<p class="mb-2">Your registration for <strong>${escapeHtml(activeUser.barangay ? 'Barangay ' + activeUser.barangay : 'SK Council')}</strong> has been submitted and is currently awaiting approval by the Municipal Admin.</p><p class="text-muted small mb-0">Please coordinate with the SK Federation Office to verify and activate your account.</p>`,
-                            confirmButtonColor: '#2563eb'
-                        });
-                        return;
-                    }
-
-                    if (userStatus === 'Rejected') {
-                        await auth.signOut();
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Registration Declined',
-                            text: 'This account registration request was declined by the administrator. Please contact the SK Federation Office for details.',
-                            confirmButtonColor: '#ef4444'
-                        });
-                        return;
-                    }
-
-                    if (userStatus === 'Deactivated') {
-                        await auth.signOut();
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Account Deactivated',
-                            text: 'This account has been deactivated. Please contact the Municipal Administrator.',
-                            confirmButtonColor: '#f59e0b'
-                        });
-                        return;
-                    }
-
-                    // Approved user: Grant session access
-                    sessionStorage.setItem('sk_auth_token', authUser.uid);
-                    sessionStorage.setItem('sk_user_role', activeUser.role || 'Barangay User');
-                    sessionStorage.setItem('sk_user_barangay', activeUser.barangay || activeUser.Barangay || '');
-                    sessionStorage.setItem('sk_username', activeUser.username || inputUser);
-                    sessionStorage.setItem('sk_status', userStatus);
-                    window.location.href = 'index.html';
-                    return;
-                }
-
-                // 4. Fallback / Migration: Query Firestore for legacy accounts
-                let querySnap = await db.collection('users').where('username', '==', inputUser).get();
-                if (querySnap.empty && inputUser !== inputUser.toLowerCase()) {
-                    querySnap = await db.collection('users').where('username', '==', inputUser.toLowerCase()).get();
-                }
-
-                if (querySnap.empty) {
+                const docSnap = await db.collection('users').doc(authUser.uid).get();
+                if (!docSnap.exists) {
+                    await auth.signOut();
                     Swal.fire({
                         icon: 'error',
-                        title: 'Invalid Credentials',
-                        text: 'Incorrect username or password. Please verify and try again.',
+                        title: 'Account Record Not Found',
+                        text: 'Your user profile could not be found in Firestore. Please contact the administrator.',
                         confirmButtonColor: '#2563eb'
                     });
                     return;
                 }
 
-                let authenticated = false;
-                let activeUser = null;
-
-                querySnap.forEach(doc => {
-                    const u = doc.data();
-                    if (u.passwordHash === inputHash || u.password === inputPass) {
-                        authenticated = true;
-                        activeUser = { id: doc.id, ...u };
-                    }
-                });
-
-                if (!authenticated || !activeUser) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Invalid Credentials',
-                        text: 'Incorrect username or password. Please verify and try again.',
-                        confirmButtonColor: '#2563eb'
-                    });
+                const activeUser = docSnap.data();
+                if (!checkApprovalStatusAndNotify(activeUser, activeUser.username || loginEmail)) {
+                    await auth.signOut();
                     return;
                 }
 
-                // 5. Status Verification
-                const userStatus = activeUser.status || 'Approved';
-
-                if (userStatus === 'Pending') {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Account Pending Approval',
-                        html: `<p class="mb-2">Your registration for <strong>${escapeHtml(activeUser.barangay ? 'Barangay ' + activeUser.barangay : 'SK Council')}</strong> has been submitted and is currently awaiting approval by the Municipal Admin.</p><p class="text-muted small mb-0">Please coordinate with the SK Federation Office to verify and activate your account.</p>`,
-                        confirmButtonColor: '#2563eb'
-                    });
-                    return;
-                }
-
-                if (userStatus === 'Rejected') {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Registration Declined',
-                        text: 'This account registration request was declined by the administrator. Please contact the SK Federation Office for details.',
-                        confirmButtonColor: '#ef4444'
-                    });
-                    return;
-                }
-
-                if (userStatus === 'Deactivated') {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Account Deactivated',
-                        text: 'This account has been deactivated. Please contact the Municipal Administrator.',
-                        confirmButtonColor: '#f59e0b'
-                    });
-                    return;
-                }
-
-                // 6. Seamless Auto-Migration to Firebase Auth for legacy accounts
-                try {
-                    const newCred = await auth.createUserWithEmailAndPassword(syntheticEmail, inputPass);
-                    if (newCred.user) {
-                        await db.collection('users').doc(activeUser.id).update({
-                            uid: newCred.user.uid,
-                            authProvider: 'password',
-                            email: syntheticEmail,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    }
-                } catch (migrateErr) {
-                    if (migrateErr.code === 'auth/email-already-in-use') {
-                        try {
-                            await auth.signInWithEmailAndPassword(syntheticEmail, inputPass);
-                        } catch (e2) {}
-                    }
-                }
-
-                // 7. Session Setup
-                sessionStorage.setItem('sk_auth_token', activeUser.id);
-                sessionStorage.setItem('sk_user_role', activeUser.role || 'Barangay User');
-                sessionStorage.setItem('sk_user_barangay', activeUser.barangay || activeUser.Barangay || '');
-                sessionStorage.setItem('sk_username', activeUser.username);
-                sessionStorage.setItem('sk_status', userStatus);
                 window.location.href = 'index.html';
 
             } catch (err) {
                 console.error('[Login Error]', err);
-                Swal.fire('Error', 'Failed to authenticate: ' + err.message, 'error');
+                await auth.signOut().catch(() => {});
+                const isCredErr = [
+                    'auth/user-not-found',
+                    'auth/wrong-password',
+                    'auth/invalid-credential',
+                    'auth/invalid-email'
+                ].includes(err.code);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Sign-In Failed',
+                    text: isCredErr
+                        ? 'Incorrect username/email or password. Please verify and try again.'
+                        : (err.code === 'auth/too-many-requests'
+                            ? 'Too many failed sign-in attempts. Please wait a few minutes and try again.'
+                            : 'Failed to authenticate: ' + err.message),
+                    confirmButtonColor: '#2563eb'
+                });
             } finally {
+                isAuthFlowActive = false;
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
             }
         }
 
         // ===============================================================
-        // REGISTRATION HANDLER
+        // REGISTRATION HANDLER (BARANGAY USERS ONLY)
         // ===============================================================
         async function handleRegister(e) {
             e.preventDefault();
@@ -1444,77 +1253,58 @@
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
             btn.disabled = true;
 
-            const username = document.getElementById('regUser').value.trim();
-            const password = document.getElementById('regPass').value.trim();
+            const username = document.getElementById('regUser').value.trim().toLowerCase();
+            const password = document.getElementById('regPass').value;
             const barangay = document.getElementById('regBarangay').value;
             const fullName = document.getElementById('regFullName').value.trim();
             const contactNumber = document.getElementById('regContact').value.trim();
-            const masterKey = document.getElementById('regMasterKey').value;
 
+            isAuthFlowActive = true;
             try {
-                let role = 'Barangay User';
-                let assignedBarangay = barangay;
-
-                if (barangay === 'System Admin') {
-                    const keyHash = await hashPassword(masterKey);
-                    if (keyHash !== MASTER_ADMIN_HASH) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Access Denied',
-                            text: 'Incorrect Default Admin Password! System Admin registration denied.',
-                            confirmButtonColor: '#ef4444'
-                        });
-                        return;
-                    }
-                    role = 'Admin';
-                    assignedBarangay = 'All';
-                }
-
-                // Check if username already exists in Firestore
-                const existingSnap = await db.collection('users').where('username', '==', username.toLowerCase()).get();
-                if (!existingSnap.empty) {
+                if (!/^[a-z0-9._-]{3,30}$/.test(username)) {
                     Swal.fire({
                         icon: 'warning',
-                        title: 'Username Taken',
-                        text: 'Username already exists! Please choose another username.',
+                        title: 'Invalid Username',
+                        text: 'Username must be 3 to 30 characters using only letters, numbers, dots, underscores, or hyphens.',
                         confirmButtonColor: '#2563eb'
                     });
                     return;
                 }
 
-                const syntheticEmail = `${username.toLowerCase()}@sk-malungon.gov.ph`;
-                let userUid = null;
-
-                // Create Firebase Auth user
-                try {
-                    const userCred = await auth.createUserWithEmailAndPassword(syntheticEmail, password);
-                    userUid = userCred.user.uid;
-                } catch (authErr) {
-                    if (authErr.code === 'auth/email-already-in-use') {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Username Taken',
-                            text: 'This username is already registered in Firebase Authentication. Please choose another username.',
-                            confirmButtonColor: '#2563eb'
-                        });
-                        return;
-                    } else {
-                        throw authErr;
-                    }
+                if (!password || password.length < 8) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Weak Password',
+                        text: 'Password must be at least 8 characters long.',
+                        confirmButtonColor: '#2563eb'
+                    });
+                    return;
                 }
 
-                const passwordHash = await hashPassword(password);
-                const userDocRef = userUid ? db.collection('users').doc(userUid) : db.collection('users').doc();
+                if (!barangay || barangay === 'All' || barangay === 'System Admin') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Invalid Barangay',
+                        text: 'Please select your assigned Barangay.',
+                        confirmButtonColor: '#2563eb'
+                    });
+                    return;
+                }
 
-                await userDocRef.set({
-                    uid: userUid || userDocRef.id,
-                    username: username.toLowerCase(),
+                const syntheticEmail = `${username}@sk-malungon.gov.ph`;
+                const userCred = await auth.createUserWithEmailAndPassword(syntheticEmail, password);
+                const userUid = userCred.user.uid;
+
+                await db.collection('users').doc(userUid).set({
+                    uid: userUid,
+                    username: username,
                     email: syntheticEmail,
                     fullName: fullName,
+                    displayName: fullName,
+                    photoURL: '',
                     contactNumber: contactNumber,
-                    passwordHash: passwordHash,
-                    role: role,
-                    barangay: assignedBarangay,
+                    role: 'Barangay User',
+                    barangay: barangay,
                     status: 'Pending',
                     isApproved: false,
                     authProvider: 'password',
@@ -1522,27 +1312,12 @@
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                // System Audit Trail
-                try {
-                    await db.collection('audit_logs').add({
-                        action: 'REGISTER_ACCOUNT',
-                        recordName: fullName || username,
-                        details: `New account registered for ${assignedBarangay === 'All' ? 'System Admin' : 'Barangay ' + assignedBarangay} (Pending Admin Approval)`,
-                        barangay: assignedBarangay,
-                        user: username,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                } catch (logErr) {
-                    console.warn('[Audit Log Warning]', logErr);
-                }
-
-                // Immediately sign out newly created user to prevent unauthorized access
                 await auth.signOut();
 
                 Swal.fire({
                     icon: 'success',
                     title: 'Registration Submitted!',
-                    html: `Your account registration for <strong>${escapeHtml(assignedBarangay === 'All' ? 'System Admin' : 'Barangay ' + assignedBarangay)}</strong> has been recorded.<br><br><span class="badge bg-warning text-dark py-2 px-3 fs-6">Status: Pending Admin Approval</span><br><br>The Municipal Admin / SK Federation will review your credentials and approve your account before you can log in.`,
+                    html: `Your account registration for <strong>Barangay ${escapeHtml(barangay)}</strong> has been recorded.<br><br><span class="badge bg-warning text-dark py-2 px-3 fs-6">Status: Pending Admin Approval</span><br><br>The Municipal Admin / SK Federation will review your credentials and approve your account before you can log in.`,
                     confirmButtonText: 'Proceed to Sign In',
                     confirmButtonColor: '#2563eb'
                 }).then(() => {
@@ -1553,8 +1328,19 @@
 
             } catch (err) {
                 console.error('[Registration Error]', err);
-                Swal.fire('Error', 'Failed to submit account registration in Cloud Firestore: ' + err.message, 'error');
+                await auth.signOut().catch(() => {});
+                if (err.code === 'auth/email-already-in-use') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Username Taken',
+                        text: 'This username is already registered. Please choose another username.',
+                        confirmButtonColor: '#2563eb'
+                    });
+                } else {
+                    Swal.fire('Error', 'Failed to submit account registration: ' + err.message, 'error');
+                }
             } finally {
+                isAuthFlowActive = false;
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
             }
