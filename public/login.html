@@ -452,6 +452,66 @@
             transform: none !important;
         }
 
+        /* Google Authentication Button & Divider */
+        .btn-google-auth {
+            width: 100%;
+            background: #ffffff;
+            color: #1e293b;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 0.85rem;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.925rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-bottom: 1.25rem;
+        }
+        .btn-google-auth:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            transform: translateY(-1px);
+            color: #0f172a;
+        }
+        .btn-google-auth:active {
+            transform: translateY(0) scale(0.99);
+        }
+        .btn-google-auth:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .btn-google-auth svg {
+            flex-shrink: 0;
+        }
+
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 0 0 1.25rem 0;
+            color: #94a3b8;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 600;
+        }
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .auth-divider span {
+            padding: 0 0.85rem;
+        }
+
         /* Alert Callouts */
         .admin-approval-notice {
             background: #eff6ff;
@@ -683,6 +743,21 @@
                         <p>Sign in with your Barangay SK Council or Admin credentials.</p>
                     </div>
 
+                    <!-- Google Sign-In Quick Action -->
+                    <button type="button" class="btn-google-auth" id="googleLoginBtn" onclick="handleGoogleSignIn()">
+                        <svg class="google-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                        </svg>
+                        <span>Sign in with Google</span>
+                    </button>
+
+                    <div class="auth-divider">
+                        <span>or sign in with username</span>
+                    </div>
+
                     <form id="loginForm" onsubmit="handleLogin(event)">
                         <div class="modern-field-group">
                             <label for="loginUser">Username</label>
@@ -730,6 +805,21 @@
                         <p>
                             <strong>Admin Verification Required:</strong> All newly registered accounts are set to <em>Pending</em> and must be approved by the Municipal Administrator before access is enabled.
                         </p>
+                    </div>
+
+                    <!-- Google Register Quick Action -->
+                    <button type="button" class="btn-google-auth" id="googleRegBtn" onclick="handleGoogleSignIn()">
+                        <svg class="google-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                        </svg>
+                        <span>Register with Google Account</span>
+                    </button>
+
+                    <div class="auth-divider">
+                        <span>or register with username & password</span>
                     </div>
 
                     <form id="registerForm" onsubmit="handleRegister(event)">
@@ -927,6 +1017,209 @@
             return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
+        // ===============================================================
+        // GOOGLE SIGN-IN & REGISTRATION HANDLER
+        // ===============================================================
+        async function handleGoogleSignIn() {
+            const loginGoogleBtn = document.getElementById('googleLoginBtn');
+            const regGoogleBtn = document.getElementById('googleRegBtn');
+            const setButtonsDisabled = (state) => {
+                if (loginGoogleBtn) loginGoogleBtn.disabled = state;
+                if (regGoogleBtn) regGoogleBtn.disabled = state;
+            };
+
+            try {
+                setButtonsDisabled(true);
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' });
+
+                const result = await auth.signInWithPopup(provider);
+                const user = result.user;
+                if (!user) return;
+
+                // 1. Check if user profile exists in Firestore (by UID first, then email fallback)
+                let userDocSnap = await db.collection('users').doc(user.uid).get();
+                let existingUser = null;
+
+                if (userDocSnap.exists) {
+                    existingUser = { id: userDocSnap.id, ...userDocSnap.data() };
+                } else {
+                    const emailSnap = await db.collection('users').where('email', '==', user.email.toLowerCase()).get();
+                    if (!emailSnap.empty) {
+                        const doc = emailSnap.docs[0];
+                        existingUser = { id: doc.id, ...doc.data() };
+                    }
+                }
+
+                // 2. Existing User: Check Approval Status
+                if (existingUser) {
+                    const userStatus = existingUser.status || 'Approved';
+
+                    if (userStatus === 'Pending') {
+                        await auth.signOut();
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Account Pending Approval',
+                            html: `<p class="mb-2">Your Google account (<strong>${escapeHtml(user.email)}</strong>) for <strong>${escapeHtml(existingUser.barangay ? 'Barangay ' + existingUser.barangay : 'SK Council')}</strong> has been registered and is currently awaiting approval by the Municipal Admin.</p><p class="text-muted small mb-0">Please coordinate with the SK Federation Office to verify and activate your account.</p>`,
+                            confirmButtonColor: '#2563eb'
+                        });
+                        return;
+                    }
+
+                    if (userStatus === 'Rejected') {
+                        await auth.signOut();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Registration Declined',
+                            text: 'This account registration request was declined by the administrator. Please contact the SK Federation Office for details.',
+                            confirmButtonColor: '#ef4444'
+                        });
+                        return;
+                    }
+
+                    if (userStatus === 'Deactivated') {
+                        await auth.signOut();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Account Deactivated',
+                            text: 'This account has been deactivated. Please contact the Municipal Administrator.',
+                            confirmButtonColor: '#f59e0b'
+                        });
+                        return;
+                    }
+
+                    // Approved user: Grant session access
+                    sessionStorage.setItem('sk_auth_token', user.uid);
+                    sessionStorage.setItem('sk_user_role', existingUser.role || 'Barangay User');
+                    sessionStorage.setItem('sk_user_barangay', existingUser.barangay || existingUser.Barangay || '');
+                    sessionStorage.setItem('sk_username', existingUser.username || user.displayName || user.email);
+                    sessionStorage.setItem('sk_status', userStatus);
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // 3. First-Time Google User: Prompt for Barangay & Contact
+                const barangays = [
+                    'Alkikan', 'Ampon', 'Atlae', 'Banahaw', 'Banate', 'Blaan',
+                    'Datal Batong', 'Datal Bila', 'Datal Tampal', 'J.P. Laurel',
+                    'Kawayan', 'Kibala', 'Kiblat', 'Kinabalan', 'Lower Mainit',
+                    'Lutay', 'Malabod', 'Malalag Cogon', 'Malandag', 'Malungon Gamay',
+                    'Nagpan', 'Panamin', 'Poblacion', 'San Juan', 'San Miguel',
+                    'San Roque', 'Talus', 'Tamban', 'Upper Biangan', 'Upper Lumabat', 'Upper Mainit'
+                ];
+                const barangayOptions = barangays.map(b => `<option value="${b}">${b}</option>`).join('');
+
+                const promptResult = await Swal.fire({
+                    title: 'Complete Your SK Registration',
+                    html: `
+                        <div class="text-start">
+                            <p class="small text-muted mb-3">
+                                Welcome, <strong>${escapeHtml(user.displayName || user.email)}</strong> (${escapeHtml(user.email)})! To link your Google account to your SK Council, please specify your assigned Barangay jurisdiction.
+                            </p>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-dark">Barangay Jurisdiction <span class="text-danger">*</span></label>
+                                <select id="swalRegBarangay" class="form-select form-select-sm">
+                                    <option value="" disabled selected>-- Select your Barangay --</option>
+                                    ${barangayOptions}
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label fw-bold small text-dark">Contact Number</label>
+                                <input type="tel" id="swalRegContact" class="form-control form-control-sm" placeholder="e.g. 0912 345 6789">
+                            </div>
+                            <div class="alert alert-info py-2 px-3 small mb-0 mt-3">
+                                <i class="bi bi-shield-lock me-1"></i>
+                                Notice: All new accounts require verification and approval by the Municipal Admin before access is enabled.
+                            </div>
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Submit for Admin Approval',
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#2563eb',
+                    cancelButtonColor: '#64748b',
+                    focusConfirm: false,
+                    allowOutsideClick: false,
+                    preConfirm: () => {
+                        const brgy = document.getElementById('swalRegBarangay').value;
+                        const contact = document.getElementById('swalRegContact').value.trim();
+                        if (!brgy) {
+                            Swal.showValidationMessage('Please select your assigned Barangay jurisdiction.');
+                            return false;
+                        }
+                        return { barangay: brgy, contactNumber: contact };
+                    }
+                });
+
+                if (!promptResult.isConfirmed) {
+                    await auth.signOut();
+                    return;
+                }
+
+                const { barangay, contactNumber } = promptResult.value;
+                const username = (user.email.split('@')[0] || 'user').toLowerCase();
+
+                // 4. Save User Profile to Firestore (status: Pending)
+                await db.collection('users').doc(user.uid).set({
+                    uid: user.uid,
+                    username: username,
+                    email: user.email.toLowerCase(),
+                    fullName: user.displayName || username,
+                    displayName: user.displayName || username,
+                    photoURL: user.photoURL || '',
+                    barangay: barangay,
+                    contactNumber: contactNumber || '',
+                    role: 'Barangay User',
+                    status: 'Pending',
+                    isApproved: false,
+                    authProvider: 'google',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // 5. System Audit Trail
+                try {
+                    await db.collection('audit_logs').add({
+                        action: 'REGISTER_GOOGLE',
+                        recordName: user.displayName || user.email,
+                        details: `Google account registered for Barangay ${barangay} (Pending Admin Approval)`,
+                        barangay: barangay,
+                        user: user.email,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch (logErr) {
+                    console.warn('[Audit Log Warning]', logErr);
+                }
+
+                // 6. Immediately sign out to prevent unauthorized dashboard entry
+                await auth.signOut();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Registration Submitted!',
+                    html: `Your Google account (<strong>${escapeHtml(user.email)}</strong>) for <strong>Barangay ${escapeHtml(barangay)}</strong> has been registered.<br><br><span class="badge bg-warning text-dark py-2 px-3 fs-6">Status: Pending Admin Approval</span><br><br>The Municipal Admin / SK Federation will review your credentials and approve your account. Once approved, you can sign in with Google directly.`,
+                    confirmButtonText: 'Understood',
+                    confirmButtonColor: '#2563eb'
+                });
+
+            } catch (err) {
+                console.error('[Google Auth Error]', err);
+                if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Google Sign-In Failed',
+                        text: err.message || 'An error occurred during Google Sign-In. Please try again.',
+                        confirmButtonColor: '#2563eb'
+                    });
+                }
+            } finally {
+                setButtonsDisabled(false);
+            }
+        }
+
+        // ===============================================================
+        // USERNAME / PASSWORD SIGN-IN HANDLER
+        // ===============================================================
         async function handleLogin(e) {
             e.preventDefault();
             const btn = document.getElementById('loginBtn');
@@ -951,7 +1244,91 @@
                     return;
                 }
 
-                // 2. Query Firestore Users Collection
+                // 2. Synthetic email mapping for Firebase Auth
+                const syntheticEmail = inputUser.includes('@') ? inputUser.toLowerCase() : `${inputUser.toLowerCase()}@sk-malungon.gov.ph`;
+
+                let firebaseAuthSuccess = false;
+                let authUser = null;
+
+                try {
+                    const userCred = await auth.signInWithEmailAndPassword(syntheticEmail, inputPass);
+                    authUser = userCred.user;
+                    firebaseAuthSuccess = true;
+                } catch (authErr) {
+                    console.log('[Firebase Auth] Not in Auth or password mismatch:', authErr.code);
+                }
+
+                // 3. If Firebase Auth succeeded, retrieve user document from Firestore
+                if (firebaseAuthSuccess && authUser) {
+                    let docSnap = await db.collection('users').doc(authUser.uid).get();
+                    let activeUser = null;
+                    if (docSnap.exists) {
+                        activeUser = { id: docSnap.id, ...docSnap.data() };
+                    } else {
+                        const querySnap = await db.collection('users').where('username', '==', inputUser.toLowerCase()).get();
+                        if (!querySnap.empty) {
+                            const doc = querySnap.docs[0];
+                            activeUser = { id: doc.id, ...doc.data() };
+                        }
+                    }
+
+                    if (!activeUser) {
+                        await auth.signOut();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Account Record Not Found',
+                            text: 'Your user profile could not be found. Please contact the administrator.',
+                            confirmButtonColor: '#2563eb'
+                        });
+                        return;
+                    }
+
+                    // Check approval status
+                    const userStatus = activeUser.status || 'Approved';
+                    if (userStatus === 'Pending') {
+                        await auth.signOut();
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Account Pending Approval',
+                            html: `<p class="mb-2">Your registration for <strong>${escapeHtml(activeUser.barangay ? 'Barangay ' + activeUser.barangay : 'SK Council')}</strong> has been submitted and is currently awaiting approval by the Municipal Admin.</p><p class="text-muted small mb-0">Please coordinate with the SK Federation Office to verify and activate your account.</p>`,
+                            confirmButtonColor: '#2563eb'
+                        });
+                        return;
+                    }
+
+                    if (userStatus === 'Rejected') {
+                        await auth.signOut();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Registration Declined',
+                            text: 'This account registration request was declined by the administrator. Please contact the SK Federation Office for details.',
+                            confirmButtonColor: '#ef4444'
+                        });
+                        return;
+                    }
+
+                    if (userStatus === 'Deactivated') {
+                        await auth.signOut();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Account Deactivated',
+                            text: 'This account has been deactivated. Please contact the Municipal Administrator.',
+                            confirmButtonColor: '#f59e0b'
+                        });
+                        return;
+                    }
+
+                    // Approved user: Grant session access
+                    sessionStorage.setItem('sk_auth_token', authUser.uid);
+                    sessionStorage.setItem('sk_user_role', activeUser.role || 'Barangay User');
+                    sessionStorage.setItem('sk_user_barangay', activeUser.barangay || activeUser.Barangay || '');
+                    sessionStorage.setItem('sk_username', activeUser.username || inputUser);
+                    sessionStorage.setItem('sk_status', userStatus);
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // 4. Fallback / Migration: Query Firestore for legacy accounts
                 let querySnap = await db.collection('users').where('username', '==', inputUser).get();
                 if (querySnap.empty && inputUser !== inputUser.toLowerCase()) {
                     querySnap = await db.collection('users').where('username', '==', inputUser.toLowerCase()).get();
@@ -988,8 +1365,8 @@
                     return;
                 }
 
-                // 3. Status Verification (Admin Approval Check)
-                const userStatus = activeUser.status || 'Approved'; // Legacy accounts default to Approved
+                // 5. Status Verification
+                const userStatus = activeUser.status || 'Approved';
 
                 if (userStatus === 'Pending') {
                     Swal.fire({
@@ -1021,7 +1398,26 @@
                     return;
                 }
 
-                // 4. Session Setup
+                // 6. Seamless Auto-Migration to Firebase Auth for legacy accounts
+                try {
+                    const newCred = await auth.createUserWithEmailAndPassword(syntheticEmail, inputPass);
+                    if (newCred.user) {
+                        await db.collection('users').doc(activeUser.id).update({
+                            uid: newCred.user.uid,
+                            authProvider: 'password',
+                            email: syntheticEmail,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                } catch (migrateErr) {
+                    if (migrateErr.code === 'auth/email-already-in-use') {
+                        try {
+                            await auth.signInWithEmailAndPassword(syntheticEmail, inputPass);
+                        } catch (e2) {}
+                    }
+                }
+
+                // 7. Session Setup
                 sessionStorage.setItem('sk_auth_token', activeUser.id);
                 sessionStorage.setItem('sk_user_role', activeUser.role || 'Barangay User');
                 sessionStorage.setItem('sk_user_barangay', activeUser.barangay || activeUser.Barangay || '');
@@ -1031,13 +1427,16 @@
 
             } catch (err) {
                 console.error('[Login Error]', err);
-                Swal.fire('Error', 'Failed to authenticate with Cloud Firestore: ' + err.message, 'error');
+                Swal.fire('Error', 'Failed to authenticate: ' + err.message, 'error');
             } finally {
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
             }
         }
 
+        // ===============================================================
+        // REGISTRATION HANDLER
+        // ===============================================================
         async function handleRegister(e) {
             e.preventDefault();
             const btn = document.getElementById('regBtn');
@@ -1071,8 +1470,8 @@
                     assignedBarangay = 'All';
                 }
 
-                // Check if username already exists
-                const existingSnap = await db.collection('users').where('username', '==', username).get();
+                // Check if username already exists in Firestore
+                const existingSnap = await db.collection('users').where('username', '==', username.toLowerCase()).get();
                 if (!existingSnap.empty) {
                     Swal.fire({
                         icon: 'warning',
@@ -1083,10 +1482,34 @@
                     return;
                 }
 
-                const passwordHash = await hashPassword(password);
+                const syntheticEmail = `${username.toLowerCase()}@sk-malungon.gov.ph`;
+                let userUid = null;
 
-                await db.collection('users').add({
-                    username: username,
+                // Create Firebase Auth user
+                try {
+                    const userCred = await auth.createUserWithEmailAndPassword(syntheticEmail, password);
+                    userUid = userCred.user.uid;
+                } catch (authErr) {
+                    if (authErr.code === 'auth/email-already-in-use') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Username Taken',
+                            text: 'This username is already registered in Firebase Authentication. Please choose another username.',
+                            confirmButtonColor: '#2563eb'
+                        });
+                        return;
+                    } else {
+                        throw authErr;
+                    }
+                }
+
+                const passwordHash = await hashPassword(password);
+                const userDocRef = userUid ? db.collection('users').doc(userUid) : db.collection('users').doc();
+
+                await userDocRef.set({
+                    uid: userUid || userDocRef.id,
+                    username: username.toLowerCase(),
+                    email: syntheticEmail,
                     fullName: fullName,
                     contactNumber: contactNumber,
                     passwordHash: passwordHash,
@@ -1094,8 +1517,27 @@
                     barangay: assignedBarangay,
                     status: 'Pending',
                     isApproved: false,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    authProvider: 'password',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
+
+                // System Audit Trail
+                try {
+                    await db.collection('audit_logs').add({
+                        action: 'REGISTER_ACCOUNT',
+                        recordName: fullName || username,
+                        details: `New account registered for ${assignedBarangay === 'All' ? 'System Admin' : 'Barangay ' + assignedBarangay} (Pending Admin Approval)`,
+                        barangay: assignedBarangay,
+                        user: username,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch (logErr) {
+                    console.warn('[Audit Log Warning]', logErr);
+                }
+
+                // Immediately sign out newly created user to prevent unauthorized access
+                await auth.signOut();
 
                 Swal.fire({
                     icon: 'success',
@@ -1108,6 +1550,7 @@
                     document.getElementById('loginUser').value = username;
                     document.getElementById('loginPass').value = '';
                 });
+
             } catch (err) {
                 console.error('[Registration Error]', err);
                 Swal.fire('Error', 'Failed to submit account registration in Cloud Firestore: ' + err.message, 'error');

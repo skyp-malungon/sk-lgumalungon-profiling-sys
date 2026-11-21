@@ -39,6 +39,45 @@ function logout() {
     window.location.replace('login.html');
 }
 
+// Monitor Firebase Auth session state
+if (typeof auth !== 'undefined' && auth.onAuthStateChanged) {
+    auth.onAuthStateChanged(async (firebaseUser) => {
+        const token = sessionStorage.getItem('sk_auth_token');
+        if (token === 'ADMIN_SESSION_TOKEN') {
+            // Local emergency administrator bootstrap session
+            return;
+        }
+
+        if (firebaseUser) {
+            try {
+                let docSnap = await db.collection('users').doc(firebaseUser.uid).get();
+                let userData = null;
+                if (docSnap.exists) {
+                    userData = docSnap.data();
+                } else {
+                    const snap = await db.collection('users').where('email', '==', (firebaseUser.email || '').toLowerCase()).get();
+                    if (!snap.empty) {
+                        userData = snap.docs[0].data();
+                    }
+                }
+
+                if (userData) {
+                    const status = userData.status || 'Approved';
+                    if (status !== 'Approved') {
+                        console.warn('[Auth Monitor] Account status is ' + status + '. Signing out.');
+                        logout();
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.warn('[Auth Monitor] Status check warning:', err);
+            }
+        } else if (!token) {
+            window.location.replace('login.html');
+        }
+    });
+}
+
 // --- Global State ---
 let globalData = [];
 let filteredData = [];
@@ -1386,6 +1425,12 @@ function renderUsersTable(users) {
     let html = '';
     users.forEach(u => {
         const status = u.status || 'Approved';
+        const userDisplayName = u.username || u.email || 'User';
+        const isGoogleUser = (u.authProvider === 'google');
+        const providerBadge = isGoogleUser 
+            ? '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle ms-1" style="font-size:0.7rem;" title="Signed in with Google"><i class="bi bi-google me-1"></i>Google</span>' 
+            : '';
+
         let badgeHtml = '';
         if (status === 'Pending') {
             badgeHtml = '<span class="badge bg-warning text-dark py-1 px-2"><i class="bi bi-clock-history me-1"></i>Pending Approval</span>';
@@ -1398,34 +1443,35 @@ function renderUsersTable(users) {
         }
 
         const dateStr = u.createdAt && u.createdAt.toDate ? u.createdAt.toDate().toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
-        const contactInfo = [u.fullName, u.contactNumber].filter(Boolean).map(escapeHtml).join(' &bull; ') || '<span class="text-muted fst-italic">Not specified</span>';
+        const contactDetails = [u.fullName, u.email, u.contactNumber].filter(Boolean);
+        const contactInfo = contactDetails.length > 0 ? contactDetails.map(escapeHtml).join(' &bull; ') : '<span class="text-muted fst-italic">Not specified</span>';
 
         let actionsHtml = '<div class="btn-group btn-group-sm">';
 
         if (status === 'Pending') {
             actionsHtml += `
-                <button type="button" class="btn btn-sm btn-success" onclick="approveUser('${escapeHtml(u.id)}', '${escapeHtml(u.username)}', '${escapeHtml(u.barangay || '')}')" title="Approve Account">
+                <button type="button" class="btn btn-sm btn-success" onclick="approveUser('${escapeHtml(u.id)}', '${escapeHtml(userDisplayName)}', '${escapeHtml(u.barangay || '')}')" title="Approve Account">
                     <i class="bi bi-check-lg me-1"></i>Approve
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-danger" onclick="rejectUser('${escapeHtml(u.id)}', '${escapeHtml(u.username)}', '${escapeHtml(u.barangay || '')}')" title="Reject Request">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="rejectUser('${escapeHtml(u.id)}', '${escapeHtml(userDisplayName)}', '${escapeHtml(u.barangay || '')}')" title="Reject Request">
                     <i class="bi bi-x-lg me-1"></i>Reject
                 </button>
             `;
         } else if (status === 'Approved') {
             actionsHtml += `
-                <button type="button" class="btn btn-sm btn-light border text-warning" onclick="toggleUserDeactivate('${escapeHtml(u.id)}', '${escapeHtml(u.username)}', 'Approved')" title="Deactivate User">
+                <button type="button" class="btn btn-sm btn-light border text-warning" onclick="toggleUserDeactivate('${escapeHtml(u.id)}', '${escapeHtml(userDisplayName)}', 'Approved')" title="Deactivate User">
                     <i class="bi bi-pause-circle"></i> Deactivate
                 </button>
-                <button type="button" class="btn btn-sm btn-light border text-danger" onclick="deleteUserAccount('${escapeHtml(u.id)}', '${escapeHtml(u.username)}')" title="Delete User">
+                <button type="button" class="btn btn-sm btn-light border text-danger" onclick="deleteUserAccount('${escapeHtml(u.id)}', '${escapeHtml(userDisplayName)}')" title="Delete User">
                     <i class="bi bi-trash"></i>
                 </button>
             `;
         } else if (status === 'Rejected' || status === 'Deactivated') {
             actionsHtml += `
-                <button type="button" class="btn btn-sm btn-outline-success" onclick="approveUser('${escapeHtml(u.id)}', '${escapeHtml(u.username)}', '${escapeHtml(u.barangay || '')}')" title="Reactivate & Approve">
+                <button type="button" class="btn btn-sm btn-outline-success" onclick="approveUser('${escapeHtml(u.id)}', '${escapeHtml(userDisplayName)}', '${escapeHtml(u.barangay || '')}')" title="Reactivate & Approve">
                     <i class="bi bi-check2-circle me-1"></i>Reactivate
                 </button>
-                <button type="button" class="btn btn-sm btn-light border text-danger" onclick="deleteUserAccount('${escapeHtml(u.id)}', '${escapeHtml(u.username)}')" title="Delete User">
+                <button type="button" class="btn btn-sm btn-light border text-danger" onclick="deleteUserAccount('${escapeHtml(u.id)}', '${escapeHtml(userDisplayName)}')" title="Delete User">
                     <i class="bi bi-trash"></i>
                 </button>
             `;
@@ -1433,7 +1479,7 @@ function renderUsersTable(users) {
         actionsHtml += '</div>';
 
         html += `<tr>
-            <td class="fw-bold text-dark font-monospace">${escapeHtml(u.username || '-')}</td>
+            <td class="fw-bold text-dark font-monospace">${escapeHtml(userDisplayName)}${providerBadge}</td>
             <td class="small">${contactInfo}</td>
             <td><span class="badge bg-light text-dark border">${escapeHtml(u.barangay || 'All')}</span></td>
             <td><span class="badge ${u.role === 'Admin' ? 'bg-primary' : 'bg-info bg-opacity-10 text-primary border'}">${escapeHtml(u.role || 'Barangay User')}</span></td>
