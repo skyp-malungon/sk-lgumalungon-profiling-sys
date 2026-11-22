@@ -217,36 +217,29 @@ function parseAndNormalizeCsvText(csvText) {
 }
 
 /**
- * Uploads normalized records to Cloud Firestore.
- * Note: Firestore Security Rules enforce a max of 20 get()/exists() calls per
- * atomic batch; with user-role lookup rules, keeping each batch to 9 writes
- * ensures every batch stays well under the 20-call atomic limit.
+ * Uploads normalized records to Cloud Firestore using concurrent single-document
+ * writes (avoids Firestore's 20 get()/exists() security-rules limit on WriteBatch).
  */
 async function uploadRecordsToFirestore(records, onProgress) {
   if (!records || records.length === 0) {
     throw new Error('No records to upload.');
   }
 
-  const BATCH_SIZE = 9;
-  const CONCURRENCY = 4;
+  const CONCURRENCY = 10;
   const total = records.length;
   let processed = 0;
 
-  const chunks = [];
-  for (let i = 0; i < total; i += BATCH_SIZE) {
-    chunks.push(records.slice(i, i + BATCH_SIZE));
-  }
-
-  for (let i = 0; i < chunks.length; i += CONCURRENCY) {
-    const windowChunks = chunks.slice(i, i + CONCURRENCY);
-    await Promise.all(windowChunks.map(async (chunk) => {
-      const batch = db.batch();
-      chunk.forEach(record => {
-        const docRef = db.collection('youth_profiles').doc(record.uid);
-        batch.set(docRef, record, { merge: true });
-      });
-      await batch.commit();
-      processed += chunk.length;
+  for (let i = 0; i < total; i += CONCURRENCY) {
+    const windowRecords = records.slice(i, i + CONCURRENCY);
+    await Promise.all(windowRecords.map(async (record, offset) => {
+      const docRef = db.collection('youth_profiles').doc(record.uid);
+      try {
+        await docRef.set(record, { merge: true });
+      } catch (err) {
+        console.error(`[CSV Import] Failed at row ${i + offset + 1} (${record['Full Name'] || record.uid}):`, err);
+        throw new Error(`Row ${i + offset + 1} (${record['Full Name'] || record.uid}): ${err.message}`);
+      }
+      processed++;
       if (typeof onProgress === 'function') {
         onProgress(Math.min(processed, total), total);
       }

@@ -830,18 +830,34 @@ function openViewModal(uid) {
     new bootstrap.Modal(document.getElementById('viewModal')).show();
 }
 
+function formatDateForInput(rawDate) {
+    if (!rawDate) return '';
+    if (rawDate.toDate && typeof rawDate.toDate === 'function') {
+        rawDate = rawDate.toDate();
+    }
+    if (typeof rawDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawDate.trim())) {
+        return rawDate.trim();
+    }
+    const parsed = new Date(rawDate);
+    if (isNaN(parsed.getTime())) return '';
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const d = String(parsed.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
 function openEditModal(uid) {
     const data = globalData.find(r => r.uid === uid);
     if (!data) return;
     currentEditData = data;
     const fields = [
-        { label: 'Full Name', key: 'Full Name', type: 'text', col: 12 },
+        { label: 'Full Name', key: 'Full Name', type: 'text', col: 12, required: true },
         { label: 'Date of Birth', key: 'Date of Birth', type: 'date', col: 6 },
         { label: 'Sex', key: 'Sex', type: 'select', options: ['Male', 'Female', 'Prefer not to say'], col: 6 },
         { label: 'Civil Status', key: 'Civil Status', type: 'select', options: ['Single', 'Married', 'Widowed', 'Separated'], col: 6 },
         { label: 'Tribe', key: 'Tribe', type: 'text', col: 6 },
         { label: 'Contact', key: 'Contact Number', type: 'text', col: 6 },
-        { label: 'Barangay', key: 'Barangay', type: 'text', col: 6, locked: USER_ROLE !== 'Admin' },
+        { label: 'Barangay', key: 'Barangay', type: 'text', col: 6, locked: USER_ROLE !== 'Admin', required: true },
         { label: 'Sitio/Purok', key: 'Sitio/Purok', type: 'text', col: 6 },
         { label: 'Educational Status', key: 'Educational Status', type: 'select', options: ['In-School Youth', 'Out-of-School Youth'], col: 6 },
         { label: 'Employment', key: 'Employment Status', type: 'select', options: ['Employed', 'Unemployed', 'Student', 'Self-Employed'], col: 6 },
@@ -852,18 +868,27 @@ function openEditModal(uid) {
     fields.forEach(field => {
         let input = '';
         const cleanId = 'edit_' + field.key.replace(/[^a-zA-Z0-9]/g, '_');
+        const currentVal = safeGet(data, field.key).trim();
+
         if (field.type === 'select') {
+            const normalizedCurrent = currentVal.toLowerCase();
+            const matchedOption = field.options.find(opt => opt.toLowerCase() === normalizedCurrent);
             input = `<select class="form-select form-control-modern" data-field-key="${escapeHtml(field.key)}" id="${cleanId}">`;
+            input += `<option value="" ${!currentVal ? 'selected' : ''}>-- Not Specified --</option>`;
+            if (currentVal && !matchedOption) {
+                input += `<option value="${escapeHtml(currentVal)}" selected>${escapeHtml(currentVal)}</option>`;
+            }
             field.options.forEach(opt => {
-                input += `<option value="${escapeHtml(opt)}" ${data[field.key] === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`;
+                input += `<option value="${escapeHtml(opt)}" ${matchedOption === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`;
             });
             input += '</select>';
         } else {
-            let val = safeGet(data, field.key) || '';
+            const val = field.type === 'date' ? formatDateForInput(data[field.key] || currentVal) : currentVal;
             const disabledState = field.locked ? 'disabled' : '';
-            input = `<input type="${field.type}" class="form-control form-control-modern" data-field-key="${escapeHtml(field.key)}" id="${cleanId}" value="${escapeHtml(val)}" ${disabledState}>`;
+            const reqAttr = field.required ? 'required' : '';
+            input = `<input type="${field.type}" class="form-control form-control-modern" data-field-key="${escapeHtml(field.key)}" id="${cleanId}" value="${escapeHtml(val)}" ${disabledState} ${reqAttr}>`;
         }
-        html += `<div class="col-md-${field.col}"><label class="form-label-modern">${field.label}</label>${input}</div>`;
+        html += `<div class="col-md-${field.col}"><label class="form-label-modern" for="${cleanId}">${field.label}</label>${input}</div>`;
     });
     html += '</div></form>';
     document.getElementById('editModalBody').innerHTML = html;
@@ -875,40 +900,62 @@ async function saveEditedRecord() {
     const updatedData = {};
     document.querySelectorAll('#editForm input, #editForm select').forEach(input => {
         const fieldKey = input.getAttribute('data-field-key') || input.id.replace('edit_', '');
-        updatedData[fieldKey] = input.value;
+        updatedData[fieldKey] = (input.value || '').trim();
     });
 
     if (USER_ROLE !== 'Admin') {
         updatedData['Barangay'] = USER_BRGY;
     }
+
+    if (!updatedData['Full Name']) {
+        uiAlert({ type: 'warning', title: 'Full Name Required', text: 'Please enter the youth full name before saving.' });
+        return;
+    }
+    if (!updatedData['Barangay']) {
+        uiAlert({ type: 'warning', title: 'Barangay Required', text: 'Please enter a valid Barangay before saving.' });
+        return;
+    }
+
+    updatedData['Full Name'] = updatedData['Full Name'].slice(0, 150);
+    updatedData['Barangay'] = updatedData['Barangay'].slice(0, 100);
     updatedData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
 
     if (updatedData['Date of Birth']) {
-        const calculatedAge = calculateAgeFromDob(updatedData['Date of Birth']);
+        const rawAge = calculateAgeFromDob(updatedData['Date of Birth']);
+        const calculatedAge = (rawAge !== null && Number.isFinite(rawAge) && rawAge >= 0 && rawAge <= 120)
+            ? Math.floor(rawAge)
+            : null;
         updatedData.calculatedAge = calculatedAge;
         updatedData.ageBracket = getAgeBracketLabel(calculatedAge);
     }
 
-    bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+    const editModalEl = document.getElementById('editModal');
+    const modalInst = bootstrap.Modal.getInstance(editModalEl);
+    if (modalInst) modalInst.hide();
     uiLoading('Saving Changes', 'Updating youth profile in Cloud Firestore...');
 
     try {
         await db.collection('youth_profiles').doc(currentEditData.uid).set(updatedData, { merge: true });
 
-        // Audit Trail
-        await db.collection('audit_logs').add({
-            action: 'EDIT',
-            recordName: updatedData['Full Name'] || 'Unknown',
-            details: `Profile updated for ${updatedData['Full Name'] || 'Unknown'}`,
-            barangay: updatedData['Barangay'] || USER_BRGY || 'All',
-            user: USERNAME,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        // Audit Trail (non-blocking if logging fails separately)
+        try {
+            await db.collection('audit_logs').add({
+                action: 'EDIT',
+                recordName: (updatedData['Full Name'] || 'Unknown').slice(0, 200),
+                details: `Profile updated for ${updatedData['Full Name'] || 'Unknown'}`.slice(0, 2000),
+                barangay: (updatedData['Barangay'] || USER_BRGY || 'All').slice(0, 100),
+                user: (USERNAME || 'User').slice(0, 100),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (logErr) {
+            console.warn('[Audit Log] Failed to record edit log:', logErr);
+        }
 
         uiClose();
         uiToast('success', 'Profile Saved', `${updatedData['Full Name'] || 'Youth profile'} has been updated.`);
         initializeApp();
     } catch (err) {
+        console.error('[Edit Save Error]', err);
         uiAlert({ type: 'error', title: 'Update Failed', text: 'Failed to update record in Firestore: ' + err.message });
     }
 }
@@ -1189,9 +1236,9 @@ async function triggerWebSync() {
         if (result.isConfirmed) {
             uiLoading('Merging into Master Registry', `Syncing ${count} records to Cloud Firestore...`);
 
-            // Chunk into 4 docs (8 write ops) per batch to stay under Firestore's 20 get()/exists() rules call limit per batch
+            // Chunk into 3 docs (6 write ops) per batch to stay well under Firestore's 20 get()/exists() rules call limit per batch
             const docs = snap.docs;
-            const CHUNK_SIZE = 4;
+            const CHUNK_SIZE = 3;
             for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
                 const chunk = docs.slice(i, i + CHUNK_SIZE);
                 const batch = db.batch();

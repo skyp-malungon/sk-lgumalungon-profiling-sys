@@ -141,6 +141,14 @@ service cloud.firestore {
              (data[key] is string && data[key].size() <= 150);
     }
 
+    function isValidOptionalStringField(data, keysToCheck, key, maxLen) {
+      return !(key in keysToCheck) || isOptionalNullableString(data, key, maxLen);
+    }
+
+    function isValidOptionalDateField(data, keysToCheck, key) {
+      return !(key in keysToCheck) || isOptionalDateOrString(data, key);
+    }
+
     function isOptionalPhotoUrl(data, key) {
       return !(key in data) ||
              data[key] == null ||
@@ -156,61 +164,69 @@ service cloud.firestore {
     // Domain Validators (Validator Function Pattern)
     // ===============================================================
 
-    // Shared survey field type & length checks for TitleCase youth profile fields
-    function hasValidCommonSurveyFields(data) {
-      return isOptionalDateOrString(data, 'Timestamp') &&
-             isOptionalNullableString(data, 'FormNo.', 150) &&
-             isOptionalNullableString(data, 'Nickname', 150) &&
-             isOptionalNullableString(data, 'Sex', 100) &&
-             isOptionalDateOrString(data, 'Date of Birth') &&
-             (!('Age' in data) ||
+    // Shared survey field type & length checks for TitleCase youth profile fields.
+    // Pass data.keys() for strict create validation, or affectedKeys() for update validation.
+    function hasValidCommonSurveyFieldsForKeys(data, keysToCheck) {
+      return isValidOptionalDateField(data, keysToCheck, 'Timestamp') &&
+             isValidOptionalStringField(data, keysToCheck, 'FormNo.', 150) &&
+             isValidOptionalStringField(data, keysToCheck, 'Nickname', 150) &&
+             isValidOptionalStringField(data, keysToCheck, 'Sex', 100) &&
+             isValidOptionalDateField(data, keysToCheck, 'Date of Birth') &&
+             (!('Age' in keysToCheck) ||
+              !('Age' in data) ||
               data['Age'] == null ||
               (data['Age'] is string && data['Age'].size() <= 30) ||
               isValidNumberRange(data['Age'], 0, 120)) &&
-             (!('calculatedAge' in data) ||
+             (!('calculatedAge' in keysToCheck) ||
+              !('calculatedAge' in data) ||
               data.calculatedAge == null ||
               isValidNumberRange(data.calculatedAge, 0, 120)) &&
-             isOptionalNullableString(data, 'ageBracket', 50) &&
-             isOptionalNullableString(data, 'Place of Birth', 200) &&
-             isOptionalNullableString(data, 'Civil Status', 100) &&
-             isOptionalNullableString(data, 'Tribe', 150) &&
-             isOptionalNullableString(data, 'Citizenship', 150) &&
-             isOptionalNullableString(data, 'Religion', 150) &&
-             isOptionalNullableString(data, 'Sitio/Purok', 150) &&
-             isOptionalNullableString(data, 'Complete Address', 2000) &&
-             isOptionalNullableString(data, 'Contact Number', 100) &&
-             isOptionalNullableString(data, 'Email Address', 150) &&
-             isOptionalNullableString(data, 'Educational Status', 150) &&
-             isOptionalNullableString(data, 'Highest Educational Attainment', 150) &&
-             isOptionalNullableString(data, 'School/Institution', 250) &&
-             isOptionalNullableString(data, 'Course/Strand', 200) &&
-             isOptionalNullableString(data, 'Employment Status', 150) &&
-             isOptionalNullableString(data, 'Nature of Work', 200) &&
-             isOptionalNullableString(data, 'Skills/Talents', 2000) &&
-             isOptionalNullableString(data, 'Languages Spoken', 2000) &&
-             isOptionalNullableString(data, 'Member of Youth Organization', 200) &&
-             isOptionalNullableString(data, 'Organizations', 2000) &&
-             isOptionalNullableString(data, 'Leadership Position', 2000) &&
-             isOptionalNullableString(data, 'Volunteer Activities', 2000) &&
-             isOptionalNullableString(data, 'Areas of Interest', 2000) &&
-             isOptionalNullableString(data, 'Youth Sector', 2000) &&
-             (!('Total Household Members' in data) ||
+             isValidOptionalStringField(data, keysToCheck, 'ageBracket', 50) &&
+             isValidOptionalStringField(data, keysToCheck, 'Place of Birth', 200) &&
+             isValidOptionalStringField(data, keysToCheck, 'Civil Status', 100) &&
+             isValidOptionalStringField(data, keysToCheck, 'Tribe', 150) &&
+             isValidOptionalStringField(data, keysToCheck, 'Citizenship', 150) &&
+             isValidOptionalStringField(data, keysToCheck, 'Religion', 150) &&
+             isValidOptionalStringField(data, keysToCheck, 'Sitio/Purok', 150) &&
+             isValidOptionalStringField(data, keysToCheck, 'Complete Address', 2000) &&
+             isValidOptionalStringField(data, keysToCheck, 'Contact Number', 100) &&
+             isValidOptionalStringField(data, keysToCheck, 'Email Address', 150) &&
+             isValidOptionalStringField(data, keysToCheck, 'Educational Status', 150) &&
+             isValidOptionalStringField(data, keysToCheck, 'Highest Educational Attainment', 150) &&
+             isValidOptionalStringField(data, keysToCheck, 'School/Institution', 250) &&
+             isValidOptionalStringField(data, keysToCheck, 'Course/Strand', 200) &&
+             isValidOptionalStringField(data, keysToCheck, 'Employment Status', 150) &&
+             isValidOptionalStringField(data, keysToCheck, 'Nature of Work', 200) &&
+             isValidOptionalStringField(data, keysToCheck, 'Skills/Talents', 2000) &&
+             isValidOptionalStringField(data, keysToCheck, 'Languages Spoken', 2000) &&
+             isValidOptionalStringField(data, keysToCheck, 'Member of Youth Organization', 200) &&
+             isValidOptionalStringField(data, keysToCheck, 'Organizations', 2000) &&
+             isValidOptionalStringField(data, keysToCheck, 'Leadership Position', 2000) &&
+             isValidOptionalStringField(data, keysToCheck, 'Volunteer Activities', 2000) &&
+             isValidOptionalStringField(data, keysToCheck, 'Areas of Interest', 2000) &&
+             isValidOptionalStringField(data, keysToCheck, 'Youth Sector', 2000) &&
+             (!('Total Household Members' in keysToCheck) ||
+              !('Total Household Members' in data) ||
               data['Total Household Members'] == null ||
               (data['Total Household Members'] is string && data['Total Household Members'].size() <= 50) ||
               isValidNumberRange(data['Total Household Members'], 0, 100)) &&
-             isOptionalNullableString(data, 'Household Income', 150) &&
-             isOptionalNullableString(data, 'Internet Access', 100) &&
-             isOptionalNullableString(data, 'Internet Connection Type', 150) &&
-             isOptionalNullableString(data, 'Preferred Announcement Mode', 2000) &&
-             isOptionalNullableString(data, '5-Year Goals', 2000) &&
-             isOptionalNullableString(data, 'Desired Programs', 2000) &&
-             isOptionalNullableString(data, 'Participation Mode', 2000) &&
-             isOptionalNullableString(data, 'Data Consent', 500) &&
-             isOptionalDateOrString(data, 'Date Accomplished') &&
-             isOptionalNullableString(data, 'SK Data Collector', 200) &&
-             isOptionalDateOrString(data, 'Date Received') &&
-             isOptionalNullableString(data, 'uid', 128) &&
-             isOptionalDateOrString(data, 'updatedAt');
+             isValidOptionalStringField(data, keysToCheck, 'Household Income', 150) &&
+             isValidOptionalStringField(data, keysToCheck, 'Internet Access', 100) &&
+             isValidOptionalStringField(data, keysToCheck, 'Internet Connection Type', 150) &&
+             isValidOptionalStringField(data, keysToCheck, 'Preferred Announcement Mode', 2000) &&
+             isValidOptionalStringField(data, keysToCheck, '5-Year Goals', 2000) &&
+             isValidOptionalStringField(data, keysToCheck, 'Desired Programs', 2000) &&
+             isValidOptionalStringField(data, keysToCheck, 'Participation Mode', 2000) &&
+             isValidOptionalStringField(data, keysToCheck, 'Data Consent', 500) &&
+             isValidOptionalDateField(data, keysToCheck, 'Date Accomplished') &&
+             isValidOptionalStringField(data, keysToCheck, 'SK Data Collector', 200) &&
+             isValidOptionalDateField(data, keysToCheck, 'Date Received') &&
+             isValidOptionalStringField(data, keysToCheck, 'uid', 128) &&
+             isValidOptionalDateField(data, keysToCheck, 'updatedAt');
+    }
+
+    function hasValidCommonSurveyFields(data) {
+      return hasValidCommonSurveyFieldsForKeys(data, data.keys());
     }
 
     function youthProfileAllowedKeys() {
@@ -252,6 +268,26 @@ service cloud.firestore {
     function isValidYouthProfile(data) {
       return data.keys().hasOnly(youthProfileAllowedKeys()) &&
              hasValidYouthProfileCoreAndFields(data);
+    }
+
+    function isValidYouthProfileUpdate(data, affected) {
+      return affected.hasOnly(youthProfileAllowedKeys()) &&
+             'Barangay' in data &&
+             data['Barangay'] is string &&
+             data['Barangay'].size() > 0 &&
+             data['Barangay'].size() <= 100 &&
+             'Full Name' in data &&
+             data['Full Name'] is string &&
+             data['Full Name'].size() > 0 &&
+             data['Full Name'].size() <= 150 &&
+             isValidOptionalDateField(data, affected, 'approvedAt') &&
+             isValidOptionalDateField(data, affected, 'createdAt') &&
+             (!('createdAt' in resource.data) || !('createdAt' in affected)) &&
+             isValidOptionalDateField(data, affected, 'submittedAt') &&
+             isValidOptionalStringField(data, affected, 'createdBy', 150) &&
+             (!('createdBy' in resource.data) || !('createdBy' in affected)) &&
+             isValidOptionalStringField(data, affected, 'updatedBy', 150) &&
+             hasValidCommonSurveyFieldsForKeys(data, affected);
     }
 
     function isValidOnlineSubmission(data) {
@@ -419,7 +455,7 @@ service cloud.firestore {
                       'barangay' in userData() &&
                       resource.data.Barangay == userBarangay());
 
-      allow create: if isApprovedUser() &&
+      allow create: if (isAdmin() || isApprovedUser()) &&
                        isValidYouthProfile(request.resource.data) &&
                        belongsToUserBarangay(request.resource.data.Barangay);
 
@@ -427,8 +463,10 @@ service cloud.firestore {
                         (isApprovedUser() &&
                          'Barangay' in resource.data &&
                          belongsToUserBarangay(resource.data.Barangay))) &&
-                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(youthProfileAllowedKeys()) &&
-                       hasValidYouthProfileCoreAndFields(request.resource.data) &&
+                       isValidYouthProfileUpdate(
+                         request.resource.data,
+                         request.resource.data.diff(resource.data).affectedKeys()
+                       ) &&
                        belongsToUserBarangay(request.resource.data.Barangay);
 
       allow delete: if isAdmin() ||
@@ -476,7 +514,7 @@ service cloud.firestore {
                       'barangay' in userData() &&
                       resource.data.barangay == userBarangay());
 
-      allow create: if isApprovedUser() &&
+      allow create: if (isAdmin() || isApprovedUser()) &&
                        isValidAuditLog(request.resource.data) &&
                        belongsToUserBarangay(request.resource.data.barangay);
 
