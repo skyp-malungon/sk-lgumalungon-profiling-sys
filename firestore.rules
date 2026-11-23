@@ -76,31 +76,43 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function userDocPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function userExists() {
+      return isAuthenticated() && exists(userDocPath());
+    }
+
     function currentUser() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return get(userDocPath()).data;
     }
 
     function isApprovedUser() {
-      return isAuthenticated() &&
-             currentUser().get('status', '') == 'Approved' &&
-             currentUser().get('isApproved', false) == true;
+      return userExists() &&
+             'status' in currentUser() &&
+             (currentUser().status == 'Approved' || currentUser().status == 'approved' || currentUser().status == 'Active') &&
+             'isApproved' in currentUser() &&
+             (currentUser().isApproved == true || currentUser().isApproved == 'true');
     }
 
     function isAdmin() {
       return isAuthenticated() &&
              (('token' in request.auth && 'role' in request.auth.token && request.auth.token.role == 'Admin') ||
-              (isApprovedUser() && currentUser().get('role', '') == 'Admin'));
+              (isApprovedUser() &&
+               'role' in currentUser() &&
+               (currentUser().role == 'Admin' || currentUser().role == 'admin' || currentUser().role == 'System Admin' || currentUser().role == 'Administrator')));
     }
 
     function userBarangay() {
-      return currentUser().get('barangay', '');
+      return userExists() && 'barangay' in currentUser() ? currentUser().barangay : '';
     }
 
     function canAccessBarangay(brgy) {
       return isAuthenticated() &&
              brgy is string &&
-             (('token' in request.auth && 'role' in request.auth.token && request.auth.token.role == 'Admin') ||
-              (isApprovedUser() && (currentUser().get('role', '') == 'Admin' || brgy == userBarangay())));
+             (isAdmin() ||
+              (isApprovedUser() && (userBarangay() == 'All' || brgy == userBarangay())));
     }
 
     // ===============================================================
