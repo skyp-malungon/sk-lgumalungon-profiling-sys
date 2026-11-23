@@ -157,6 +157,10 @@ function parseAndNormalizeCsvText(csvText) {
             return maxLen && s.length > maxLen ? s.slice(0, maxLen) : s;
           };
 
+          const safeUuid = (typeof crypto !== 'undefined' && crypto.randomUUID)
+            ? crypto.randomUUID().replace(/-/g, '')
+            : (Date.now().toString(36) + Math.random().toString(36).substring(2));
+
           const record = {
             'Timestamp': cleanStr(r[0], 150) || new Date().toISOString(),
             'FormNo.': cleanStr(r[1], 150),
@@ -203,7 +207,7 @@ function parseAndNormalizeCsvText(csvText) {
             'Date Accomplished': cleanStr(r[40], 150),
             'SK Data Collector': cleanStr(r[41], 200),
             'Date Received': cleanStr(r[42], 150),
-            'uid': rawUid ? rawUid.slice(0, 128) : ('YOUTH_' + crypto.randomUUID().replace(/-/g, ''))
+            'uid': rawUid ? rawUid.slice(0, 128) : ('YOUTH_' + safeUuid)
           };
 
           normalizedRecords.push(record);

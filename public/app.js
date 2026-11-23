@@ -787,7 +787,11 @@ function exportToCSV() {
     let csvContent = headers.map(h => `"${h}"`).join(',') + '\n';
     filteredTableData.forEach(row => {
         const rowData = columns.map(col => {
-            let val = row[col] === null || row[col] === undefined ? '' : String(row[col]);
+            let val = row[col];
+            if (val === null || val === undefined || val === '') {
+                val = safeGet(row, col);
+            }
+            val = (val === null || val === undefined) ? '' : String(val);
             val = val.replace(/"/g, '""');
             return `"${val}"`;
         });
@@ -927,7 +931,14 @@ async function saveEditedRecord() {
             : null;
         updatedData.calculatedAge = calculatedAge;
         updatedData.ageBracket = getAgeBracketLabel(calculatedAge);
+        if (calculatedAge !== null) {
+            updatedData.Age = calculatedAge;
+        }
+    } else {
+        updatedData.calculatedAge = null;
+        updatedData.ageBracket = 'Unknown';
     }
+    updatedData.updatedBy = (USERNAME || 'User').slice(0, 100);
 
     const editModalEl = document.getElementById('editModal');
     const modalInst = bootstrap.Modal.getInstance(editModalEl);
@@ -1185,14 +1196,31 @@ function normalizeSubmissionForMaster(doc) {
         youthSector: 'Youth Sector',
         formNo: 'FormNo.'
     };
-    const ignoredKeys = new Set(['createdAt', 'submittedAt']);
+    const validMasterKeys = new Set([
+        'Timestamp', 'FormNo.', 'Barangay', 'Full Name', 'Nickname', 'Sex',
+        'Date of Birth', 'Age', 'calculatedAge', 'ageBracket', 'Place of Birth',
+        'Civil Status', 'Tribe', 'Citizenship', 'Religion', 'Sitio/Purok',
+        'Complete Address', 'Contact Number', 'Email Address', 'Educational Status',
+        'Highest Educational Attainment', 'School/Institution', 'Course/Strand',
+        'Employment Status', 'Nature of Work', 'Skills/Talents', 'Languages Spoken',
+        'Member of Youth Organization', 'Organizations', 'Leadership Position',
+        'Volunteer Activities', 'Areas of Interest', 'Youth Sector',
+        'Total Household Members', 'Household Income', 'Internet Access',
+        'Internet Connection Type', 'Preferred Announcement Mode', '5-Year Goals',
+        'Desired Programs', 'Participation Mode', 'Data Consent',
+        'Date Accomplished', 'SK Data Collector', 'Date Received',
+        'uid', 'approvedAt', 'updatedAt',
+        'createdAt', 'submittedAt', 'createdBy', 'updatedBy'
+    ]);
+
     const normalized = {};
 
     Object.keys(raw).forEach(k => {
-        if (ignoredKeys.has(k)) return;
         const targetKey = keyMap[k] || k;
-        if (normalized[targetKey] === undefined || normalized[targetKey] === '') {
-            normalized[targetKey] = raw[k];
+        if (validMasterKeys.has(targetKey)) {
+            if (normalized[targetKey] === undefined || normalized[targetKey] === '') {
+                normalized[targetKey] = raw[k];
+            }
         }
     });
 
@@ -1201,6 +1229,7 @@ function normalizeSubmissionForMaster(doc) {
         if (age !== null) {
             normalized.calculatedAge = age;
             normalized.ageBracket = getAgeBracketLabel(age);
+            if (!normalized.Age) normalized.Age = age;
         }
     }
 
