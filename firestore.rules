@@ -242,7 +242,7 @@ service cloud.firestore {
     // 1. Master Collection: youth_profiles
     // ===============================================================
     match /youth_profiles/{profileId} {
-      allow read: if canAccessBarangay(resource.data.Barangay);
+      allow read: if isAdmin() || (isApprovedUser() && resource != null && canAccessBarangay(resource.data.Barangay));
 
       allow create: if canAccessBarangay(request.resource.data.Barangay) &&
                        isValidYouthProfile(request.resource.data);
@@ -288,7 +288,7 @@ service cloud.firestore {
     // 4. System Audit Trail: audit_logs (Immutable)
     // ===============================================================
     match /audit_logs/{logId} {
-      allow read: if canAccessBarangay(resource.data.barangay);
+      allow read: if isAdmin() || (isApprovedUser() && resource != null && canAccessBarangay(resource.data.barangay));
 
       allow create: if canAccessBarangay(request.resource.data.barangay) &&
                        isValidAuditLog(request.resource.data);
