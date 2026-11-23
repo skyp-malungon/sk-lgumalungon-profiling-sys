@@ -6,70 +6,26 @@ rules_version = '2';
 //
 // Collection: youth_profiles
 // Document ID: {profileId} (UUID or auto-generated ID)
-// Fields:
-//   - Barangay: string (required, 1-100 chars) - Assigned Barangay
-//   - Full Name: string (required, 1-150 chars) - Youth full name
-//   - Timestamp, Date of Birth, Date Accomplished, Date Received, approvedAt, updatedAt, createdAt, submittedAt: timestamp or string (optional, <= 150 chars)
-//   - createdBy, updatedBy: string or null (optional, <= 150 chars)
-//   - Age: int/float (0-120), string (<= 30 chars), or null (optional)
-//   - calculatedAge: int/float (0-120) or null (optional)
-//   - Total Household Members: int/float (0-100), string (<= 50 chars), or null (optional)
-//   - Multi-select / goals / address strings: string (optional, <= 2000 chars)
-//   - Standard survey & system strings: string (optional, <= 250 chars)
 //
 // Collection: online_submissions
 // Document ID: {submissionId} (auto-generated ID)
-// Fields:
-//   - Barangay / barangay: string (at least one required, 1-100 chars) - Target Barangay
-//   - Full Name / fullName: string (at least one required, 1-150 chars) - Applicant full name
-//   - Survey fields (TitleCase matching youth_profiles, excluding approvedAt) and camelCase intake keys
-//   - Forbidden fields: approvedAt, role, status, isApproved, password, passwordHash
 //
 // Collection: users
 // Document ID: {userId} (Firebase Auth UID)
-// Fields:
-//   - uid: string (required on create, == userId, <= 128 chars)
-//   - username: string (required on create, 1-100 chars)
-//   - email: string (required on create, 1-150 chars)
-//   - fullName: string (optional, <= 150 chars)
-//   - displayName: string or null (optional, <= 150 chars)
-//   - photoURL: string (http/https URL or empty) or null (optional, <= 500 chars)
-//   - contactNumber: string or null (optional, <= 50 chars)
-//   - role: string (required on create: 'Barangay User'; admin update: 'Admin' or 'Barangay User')
-//   - barangay: string (required on create: 1-100 chars, not 'All' or 'System Admin')
-//   - status: string (required on create: 'Pending'; admin update: 'Pending'|'Approved'|'Rejected'|'Deactivated')
-//   - isApproved: bool (required on create: false)
-//   - authProvider: string (required on create: 'google' or 'password')
-//   - approvedBy / rejectedBy: string or null (optional, <= 100 chars)
-//   - approvedAt / rejectedAt / createdAt / updatedAt: timestamp, string (<= 100 chars), or null (optional)
-//   - Forbidden fields: password, passwordHash
 //
 // Collection: audit_logs (immutable)
 // Document ID: {logId} (auto-generated ID)
-// Fields:
-//   - action: string (required, 1-50 chars)
-//   - recordName: string (required, 1-200 chars)
-//   - details: string (required, <= 2000 chars)
-//   - barangay: string (required, 1-100 chars)
-//   - user: string (required, 1-100 chars)
-//   - timestamp: timestamp or string (required, 1-100 chars)
 //
 // Collection: counters
 // Document ID: {counterId}
-// Fields:
-//   - lastSerial: int (required, >= 0)
-//   - barangay / Barangay: string (optional, <= 100 chars)
-//   - year: int (2000-2100) or string (optional, <= 10 chars)
-//   - prefix: string (optional, <= 50 chars)
-//   - updatedAt / timestamp: timestamp or string (optional, <= 100 chars)
-//
 // ===============================================================
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // ===============================================================
-    // Authentication & Jurisdiction Helpers
+    // Authentication & Authorization Helpers
+    // Streamlined for AST / 1,000 expression budget safety (< 100 expr)
     // ===============================================================
 
     function isAuthenticated() {
@@ -90,70 +46,41 @@ service cloud.firestore {
 
     function isApprovedUser() {
       return userExists() &&
-             'status' in currentUser() &&
-             (currentUser().status == 'Approved' || currentUser().status == 'approved' || currentUser().status == 'Active') &&
-             'isApproved' in currentUser() &&
-             (currentUser().isApproved == true || currentUser().isApproved == 'true');
+             currentUser().get('status', '') in ['Approved', 'approved', 'Active'] &&
+             (currentUser().get('isApproved', false) == true || currentUser().get('isApproved', '') == 'true');
     }
 
     function isAdmin() {
       return isAuthenticated() &&
              (('token' in request.auth && 'role' in request.auth.token && request.auth.token.role == 'Admin') ||
               (isApprovedUser() &&
-               'role' in currentUser() &&
-               (currentUser().role == 'Admin' || currentUser().role == 'admin' || currentUser().role == 'System Admin' || currentUser().role == 'Administrator')));
-    }
-
-    function userBarangay() {
-      return userExists() && 'barangay' in currentUser() ? currentUser().barangay : '';
+               currentUser().get('role', '') in ['Admin', 'admin', 'System Admin', 'Administrator']));
     }
 
     function canAccessBarangay(brgy) {
       return isAuthenticated() &&
              brgy is string &&
-             (isAdmin() ||
-              (isApprovedUser() && (userBarangay() == 'All' || brgy == userBarangay())));
+             brgy.size() > 0 &&
+             brgy.size() <= 100 &&
+             (('token' in request.auth && 'role' in request.auth.token && request.auth.token.role == 'Admin') ||
+              (userExists() &&
+               currentUser().get('status', '') in ['Approved', 'approved', 'Active'] &&
+               (currentUser().get('isApproved', false) == true || currentUser().get('isApproved', '') == 'true') &&
+               (currentUser().get('role', '') in ['Admin', 'admin', 'System Admin', 'Administrator'] ||
+                currentUser().get('barangay', '') == 'All' ||
+                currentUser().get('barangay', '') == brgy)));
     }
 
     // ===============================================================
-    // Optimized Field Validators (AST-Budget Protected)
+    // Field & Type Validators
     // ===============================================================
-
-    function isShortStr(val) {
-      return val == null || (val is string && val.size() <= 250);
-    }
-
-    function isLongStr(val) {
-      return val == null || (val is string && val.size() <= 2000);
-    }
 
     function isDateVal(val) {
       return val == null || (val is string && val.size() <= 150) || val is timestamp;
     }
 
-    function isAgeVal(val) {
-      return val == null ||
-             (val is int && val >= 0 && val <= 120) ||
-             (val is float && val >= 0.0 && val <= 120.0) ||
-             (val is string && val.size() <= 30);
-    }
-
-    function isCalcAgeVal(val) {
-      return val == null ||
-             (val is int && val >= 0 && val <= 120) ||
-             (val is float && val >= 0.0 && val <= 120.0);
-    }
-
-    function isHouseholdMembersVal(val) {
-      return val == null ||
-             (val is int && val >= 0 && val <= 100) ||
-             (val is float && val >= 0.0 && val <= 100.0) ||
-             (val is string && val.size() <= 50);
-    }
-
     function isValidUrl(url) {
-      return url is string &&
-             (url.matches('^https://.*') || url.matches('^http://.*'));
+      return url is string && (url.matches('^https://.*') || url.matches('^http://.*'));
     }
 
     function isOptionalPhotoUrl(data, key) {
@@ -163,60 +90,7 @@ service cloud.firestore {
              (isValidUrl(data[key]) && data[key].size() <= 1000);
     }
 
-    // Survey Field Validation across all 45 demographic fields
-    function hasValidSurveyFields(d) {
-      return isDateVal(d.get('Timestamp', null)) &&
-             isShortStr(d.get('FormNo.', null)) &&
-             isShortStr(d.get('Nickname', null)) &&
-             isShortStr(d.get('Sex', null)) &&
-             isDateVal(d.get('Date of Birth', null)) &&
-             isAgeVal(d.get('Age', null)) &&
-             isCalcAgeVal(d.get('calculatedAge', null)) &&
-             isShortStr(d.get('ageBracket', null)) &&
-             isShortStr(d.get('Place of Birth', null)) &&
-             isShortStr(d.get('Civil Status', null)) &&
-             isShortStr(d.get('Tribe', null)) &&
-             isShortStr(d.get('Citizenship', null)) &&
-             isShortStr(d.get('Religion', null)) &&
-             isShortStr(d.get('Sitio/Purok', null)) &&
-             isLongStr(d.get('Complete Address', null)) &&
-             isShortStr(d.get('Contact Number', null)) &&
-             isShortStr(d.get('Email Address', null)) &&
-             isShortStr(d.get('Educational Status', null)) &&
-             isShortStr(d.get('Highest Educational Attainment', null)) &&
-             isShortStr(d.get('School/Institution', null)) &&
-             isShortStr(d.get('Course/Strand', null)) &&
-             isShortStr(d.get('Employment Status', null)) &&
-             isShortStr(d.get('Nature of Work', null)) &&
-             isLongStr(d.get('Skills/Talents', null)) &&
-             isLongStr(d.get('Languages Spoken', null)) &&
-             isShortStr(d.get('Member of Youth Organization', null)) &&
-             isLongStr(d.get('Organizations', null)) &&
-             isLongStr(d.get('Leadership Position', null)) &&
-             isLongStr(d.get('Volunteer Activities', null)) &&
-             isLongStr(d.get('Areas of Interest', null)) &&
-             isLongStr(d.get('Youth Sector', null)) &&
-             isHouseholdMembersVal(d.get('Total Household Members', null)) &&
-             isShortStr(d.get('Household Income', null)) &&
-             isShortStr(d.get('Internet Access', null)) &&
-             isShortStr(d.get('Internet Connection Type', null)) &&
-             isLongStr(d.get('Preferred Announcement Mode', null)) &&
-             isLongStr(d.get('5-Year Goals', null)) &&
-             isLongStr(d.get('Desired Programs', null)) &&
-             isLongStr(d.get('Participation Mode', null)) &&
-             isLongStr(d.get('Data Consent', null)) &&
-             isDateVal(d.get('Date Accomplished', null)) &&
-             isShortStr(d.get('SK Data Collector', null)) &&
-             isDateVal(d.get('Date Received', null)) &&
-             isShortStr(d.get('uid', null)) &&
-             (!('updatedAt' in d) || isDateVal(d.updatedAt)) &&
-             (!('approvedAt' in d) || isDateVal(d.approvedAt)) &&
-             (!('createdAt' in d) || isDateVal(d.createdAt)) &&
-             (!('submittedAt' in d) || isDateVal(d.submittedAt)) &&
-             (!('createdBy' in d) || isShortStr(d.createdBy)) &&
-             (!('updatedBy' in d) || isShortStr(d.updatedBy));
-    }
-
+    // Key sets
     function youthProfileKeys() {
       return [
         'Timestamp', 'FormNo.', 'Barangay', 'Full Name', 'Nickname', 'Sex',
@@ -237,23 +111,25 @@ service cloud.firestore {
     }
 
     function isValidYouthProfile(data) {
-      return data.keys().hasOnly(youthProfileKeys()) &&
-             isShortStr(data.get('Barangay', '')) &&
-             data.Barangay.size() > 0 &&
-             isShortStr(data.get('Full Name', '')) &&
-             data['Full Name'].size() > 0 &&
-             hasValidSurveyFields(data);
+      return data.keys().size() <= 60 &&
+             data.keys().hasOnly(youthProfileKeys()) &&
+             'Barangay' in data && data.Barangay is string && data.Barangay.size() > 0 && data.Barangay.size() <= 100 &&
+             'Full Name' in data && data['Full Name'] is string && data['Full Name'].size() > 0 && data['Full Name'].size() <= 150 &&
+             (!('Contact Number' in data) || data['Contact Number'] == null || (data['Contact Number'] is string && data['Contact Number'].size() <= 100)) &&
+             (!('Email Address' in data) || data['Email Address'] == null || (data['Email Address'] is string && data['Email Address'].size() <= 150)) &&
+             (!('Age' in data) || data.Age == null || data.Age is int || data.Age is float || (data.Age is string && data.Age.size() <= 30)) &&
+             (!('calculatedAge' in data) || data.calculatedAge == null || data.calculatedAge is int || data.calculatedAge is float);
     }
 
     function isValidYouthProfileUpdate(data, affected) {
-      return affected.hasOnly(youthProfileKeys()) &&
-             isShortStr(data.get('Barangay', '')) &&
-             data.Barangay.size() > 0 &&
-             isShortStr(data.get('Full Name', '')) &&
-             data['Full Name'].size() > 0 &&
+      return data.keys().size() <= 60 &&
+             affected.hasOnly(youthProfileKeys()) &&
+             'Barangay' in data && data.Barangay is string && data.Barangay.size() > 0 && data.Barangay.size() <= 100 &&
+             'Full Name' in data && data['Full Name'] is string && data['Full Name'].size() > 0 && data['Full Name'].size() <= 150 &&
              (!('createdAt' in resource.data) || !('createdAt' in affected)) &&
              (!('createdBy' in resource.data) || !('createdBy' in affected)) &&
-             hasValidSurveyFields(data);
+             (!('Contact Number' in data) || data['Contact Number'] == null || (data['Contact Number'] is string && data['Contact Number'].size() <= 100)) &&
+             (!('Email Address' in data) || data['Email Address'] == null || (data['Email Address'] is string && data['Email Address'].size() <= 150));
     }
 
     function onlineSubmissionKeys() {
@@ -279,22 +155,19 @@ service cloud.firestore {
     }
 
     function isValidOnlineSubmission(data) {
-      return !data.keys().hasAny(['approvedAt', 'role', 'status', 'isApproved', 'password', 'passwordHash']) &&
+      return data.keys().size() <= 65 &&
+             !data.keys().hasAny(['approvedAt', 'role', 'status', 'isApproved', 'password', 'passwordHash']) &&
              data.keys().hasOnly(onlineSubmissionKeys()) &&
-             (('Barangay' in data && isShortStr(data.Barangay) && data.Barangay.size() > 0) ||
-              ('barangay' in data && isShortStr(data.barangay) && data.barangay.size() > 0)) &&
-             (('Full Name' in data && isShortStr(data['Full Name']) && data['Full Name'].size() > 0) ||
-              ('fullName' in data && isShortStr(data.fullName) && data.fullName.size() > 0)) &&
-             hasValidSurveyFields(data) &&
-             (!('sitio' in data) || isShortStr(data.sitio)) &&
-             (!('dateOfBirth' in data) || isDateVal(data.dateOfBirth)) &&
-             (!('formNo' in data) || isShortStr(data.formNo));
+             (('Barangay' in data && data.Barangay is string && data.Barangay.size() > 0 && data.Barangay.size() <= 100) ||
+              ('barangay' in data && data.barangay is string && data.barangay.size() > 0 && data.barangay.size() <= 100)) &&
+             (('Full Name' in data && data['Full Name'] is string && data['Full Name'].size() > 0 && data['Full Name'].size() <= 150) ||
+              ('fullName' in data && data.fullName is string && data.fullName.size() > 0 && data.fullName.size() <= 150));
     }
 
     function isValidUserProfileFields(data) {
-      return (!('fullName' in data) || isShortStr(data.fullName)) &&
-             (!('displayName' in data) || isShortStr(data.displayName)) &&
-             (!('contactNumber' in data) || isShortStr(data.contactNumber)) &&
+      return (!('fullName' in data) || (data.fullName is string && data.fullName.size() <= 150)) &&
+             (!('displayName' in data) || data.displayName == null || (data.displayName is string && data.displayName.size() <= 150)) &&
+             (!('contactNumber' in data) || data.contactNumber == null || (data.contactNumber is string && data.contactNumber.size() <= 50)) &&
              isOptionalPhotoUrl(data, 'photoURL') &&
              (!('updatedAt' in data) || isDateVal(data.updatedAt));
     }
@@ -334,10 +207,10 @@ service cloud.firestore {
              (!('role' in data) || data.role in ['Admin', 'Barangay User']) &&
              (!('status' in data) || data.status in ['Pending', 'Approved', 'Rejected', 'Deactivated']) &&
              (!('isApproved' in data) || data.isApproved is bool) &&
-             (!('barangay' in data) || (data.barangay is string && data.barangay.size() > 0)) &&
-             (!('approvedBy' in data) || isShortStr(data.approvedBy)) &&
+             (!('barangay' in data) || (data.barangay is string && data.barangay.size() > 0 && data.barangay.size() <= 100)) &&
+             (!('approvedBy' in data) || (data.approvedBy is string && data.approvedBy.size() <= 100)) &&
              (!('approvedAt' in data) || isDateVal(data.approvedAt)) &&
-             (!('rejectedBy' in data) || isShortStr(data.rejectedBy)) &&
+             (!('rejectedBy' in data) || (data.rejectedBy is string && data.rejectedBy.size() <= 100)) &&
              (!('rejectedAt' in data) || isDateVal(data.rejectedAt)) &&
              (!('createdAt' in resource.data) || !('createdAt' in data) || data.createdAt == resource.data.createdAt) &&
              isValidUserProfileFields(data);
@@ -346,21 +219,21 @@ service cloud.firestore {
     function isValidAuditLog(data) {
       return data.keys().hasOnly(['action', 'recordName', 'details', 'barangay', 'user', 'timestamp']) &&
              data.keys().hasAll(['action', 'recordName', 'details', 'barangay', 'user', 'timestamp']) &&
-             isShortStr(data.action) && data.action.size() > 0 &&
-             isShortStr(data.recordName) && data.recordName.size() > 0 &&
-             isLongStr(data.details) &&
-             isShortStr(data.barangay) && data.barangay.size() > 0 &&
-             isShortStr(data.user) && data.user.size() > 0 &&
+             data.action is string && data.action.size() > 0 && data.action.size() <= 100 &&
+             data.recordName is string && data.recordName.size() > 0 && data.recordName.size() <= 200 &&
+             data.details is string && data.details.size() <= 2000 &&
+             data.barangay is string && data.barangay.size() > 0 && data.barangay.size() <= 100 &&
+             data.user is string && data.user.size() > 0 && data.user.size() <= 100 &&
              isDateVal(data.timestamp);
     }
 
     function isValidCounter(data) {
       return data.keys().hasOnly(['lastSerial', 'barangay', 'Barangay', 'year', 'prefix', 'updatedAt', 'timestamp']) &&
              'lastSerial' in data && data.lastSerial is int && data.lastSerial >= 0 &&
-             (!('barangay' in data) || isShortStr(data.barangay)) &&
-             (!('Barangay' in data) || isShortStr(data.Barangay)) &&
+             (!('barangay' in data) || (data.barangay is string && data.barangay.size() <= 100)) &&
+             (!('Barangay' in data) || (data.Barangay is string && data.Barangay.size() <= 100)) &&
              (!('year' in data) || data.year == null || (data.year is string && data.year.size() <= 10) || (data.year is int && data.year >= 2000 && data.year <= 2100)) &&
-             (!('prefix' in data) || isShortStr(data.prefix)) &&
+             (!('prefix' in data) || (data.prefix is string && data.prefix.size() <= 50)) &&
              (!('updatedAt' in data) || isDateVal(data.updatedAt)) &&
              (!('timestamp' in data) || isDateVal(data.timestamp));
     }
@@ -369,7 +242,7 @@ service cloud.firestore {
     // 1. Master Collection: youth_profiles
     // ===============================================================
     match /youth_profiles/{profileId} {
-      allow read: if isAdmin() || (isApprovedUser() && resource.data.Barangay == userBarangay());
+      allow read: if canAccessBarangay(resource.data.Barangay);
 
       allow create: if canAccessBarangay(request.resource.data.Barangay) &&
                        isValidYouthProfile(request.resource.data);
@@ -394,7 +267,7 @@ service cloud.firestore {
     // 3. User Accounts Collection: users
     // ===============================================================
     match /users/{userId} {
-      allow read: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
+      allow read: if (isAuthenticated() && request.auth.uid == userId) || isAdmin();
 
       allow create: if isAuthenticated() &&
                        request.auth.uid == userId &&
@@ -415,7 +288,7 @@ service cloud.firestore {
     // 4. System Audit Trail: audit_logs (Immutable)
     // ===============================================================
     match /audit_logs/{logId} {
-      allow read: if isAdmin() || (isApprovedUser() && resource.data.barangay == userBarangay());
+      allow read: if canAccessBarangay(resource.data.barangay);
 
       allow create: if canAccessBarangay(request.resource.data.barangay) &&
                        isValidAuditLog(request.resource.data);
